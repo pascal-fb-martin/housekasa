@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ### BEGIN INIT INFO
-# Provides:        housewiz
+# Provides:        housekasa
 # Required-Start:  $network $remote_fs $syslog $houseportal
 # Required-Stop:   $network $remote_fs $syslog $houseportal
 # Default-Start:   2 3 4 5
@@ -13,26 +13,26 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 . /lib/lsb/init-functions
 
-DAEMON=/usr/local/bin/housewiz
-PIDFILE=/var/run/housewiz.pid
+DAEMON=/usr/local/bin/housekasa
+PIDFILE=/var/run/housekasa.pid
 
 test -x $DAEMON || exit 0
 
 OPTS=
 
-if [ -r /etc/default/housewiz ]; then
-	. /etc/default/housewiz
+if [ -r /etc/default/housekasa ]; then
+	. /etc/default/housekasa
 fi
 
 
 case $1 in
 	start)
-		log_daemon_msg "Starting the House WiZ Control server" "housewiz"
+		log_daemon_msg "Starting the House Kasa Control server" "housekasa"
 		start-stop-daemon --start --quiet --oknodo --background --pidfile $PIDFILE --make-pidfile --startas $DAEMON -- $OPTS
 		log_end_msg $?
   		;;
 	stop)
-		log_daemon_msg "Stopping the House WiZ Control server" "housewiz"
+		log_daemon_msg "Stopping the House Kasa Control server" "housekasa"
 		start-stop-daemon --stop --quiet --oknodo --pidfile $PIDFILE --retry=TERM/30/KILL/5 --exec $DAEMON
 		log_end_msg $?
 		rm -f $PIDFILE
@@ -51,7 +51,7 @@ case $1 in
 		exit 3
 		;;
 	status)
-		status_of_proc $DAEMON "House WiZ Control server"
+		status_of_proc $DAEMON "House Kasa Control server"
 		;;
 	*)
 		echo "Usage: $0 {start|stop|restart|try-restart|force-reload|status}"
