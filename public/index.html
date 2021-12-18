@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel=stylesheet type="text/css" href="/house.css" title="House">
+<script>
+function kasaShowStatus (response) {
+
+    document.getElementById('portal').href = 'http://'+response.proxy+'/index.html';
+
+    document.getElementsByTagName('title')[0].innerHTML =
+        response.host+' - Kasa Devices';
+
+    var state = response.control.status;
+    for (const [key, value] of Object.entries(state)) {
+        var state = document.getElementById ('state-'+key);
+        var button = document.getElementById ('button-'+key);
+        if (value.state == 'on') {
+            state.innerHTML = 'ON';
+            button.innerHTML = 'OFF';
+            button.controlState = 'off';
+            button.disabled = false;
+        } else if (value.state == 'off') {
+            state.innerHTML = 'OFF';
+            button.innerHTML = 'ON';
+            button.controlState = 'on';
+            button.disabled = false;
+        } else {
+            state.innerHTML = value.state;
+            button.innerHTML = 'ON';
+            button.disabled = true;
+        }
+    }
+}
+
+function kasaStatus () {
+    var command = new XMLHttpRequest();
+    command.open("GET", "/kasa/status");
+    command.onreadystatechange = function () {
+        if (command.readyState === 4 && command.status === 200) {
+            kasaShowStatus (JSON.parse(command.responseText));
+        }
+    }
+    command.send(null);
+}
+
+function controlClick () {
+    var point = this.controlName;
+    var state = this.controlState;
+    var command = new XMLHttpRequest();
+    command.open("GET", "/kasa/set?point="+point+"&state="+state);
+    command.onreadystatechange = function () {
+        if (command.readyState === 4 && command.status === 200) {
+            kasaShowStatus (JSON.parse(command.responseText));
+        }
+    }
+    command.send(null);
+}
+
+function kasaShowConfig (response) {
+   var iolist = document.getElementsByClassName ('iolist')[0];
+   var devices = response.kasa.devices;
+   for (var i = 0; i < devices.length; i++) {
+        var device = devices[i];
+        var outer = document.createElement("tr");
+
+        var inner = document.createElement("td");
+        var label = document.createElement("span");
+        label.innerHTML = device.name;
+        inner.appendChild(label);
+        outer.appendChild(inner);
+
+        inner = document.createElement("td");
+        label = document.createElement("span");
+        label.innerHTML = '(wait)';
+        label.id = 'state-'+device.name;
+        inner.appendChild(label);
+        outer.appendChild(inner);
+
+        inner = document.createElement("td");
+        var button = document.createElement("button");
+        button.innerHTML = '(wait)';
+        button.disabled = true;
+        button.id = 'button-'+device.name;
+        button.onclick = controlClick;
+        button.controlName = device.name;
+        button.controlstate = 'on';
+        inner.appendChild(button);
+        outer.appendChild(inner);
+
+        inner = document.createElement("td");
+        label = document.createElement("span");
+        if (device.description)
+            label.innerHTML = device.description;
+        else
+            label.innerHTML = '';
+        inner.appendChild(label);
+        outer.appendChild(inner);
+
+        iolist.appendChild(outer);
+    }
+}
+
+function kasaConfig () {
+    var command = new XMLHttpRequest();
+    command.open("GET", "/kasa/config");
+    command.onreadystatechange = function () {
+        if (command.readyState === 4 && command.status === 200) {
+            kasaShowConfig (JSON.parse(command.responseText));
+            kasaStatus();
+            setInterval (kasaStatus, 1000);
+        }
+    }
+    command.send(null);
+}
+
+window.onload = function() {
+   kasaConfig();
+};
+</script>
+<head>
+   <title>Kasa Devices</title>
+</head>
+<body>
+   <table class="housetopcontainer">
+   <tr><td>
+   <table class="housetop">
+   <tr>
+   <td><a id="portal" href="/index.html">Portal</a></td>
+   <td><span>Kasa</span></td>
+   <td><a href="/kasa/events.html">Events</a></td>
+   <td><a href="/kasa/config.html">Config</a></td>
+   </tr>
+   </table>
+   </td></tr>
+   </table>
+   <table class="housewidetable iolist" border="0">
+      <tr>
+         <th width="14%">NAME</th>
+         <th width="10%">STATE</th>
+         <th width="10%">CONTROL</th>
+         <th width="52%">DESCRIPTION</th>
+      </tr>
+   </table>
+</body>
+</html>
+

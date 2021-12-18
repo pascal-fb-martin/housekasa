@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel=stylesheet type="text/css" href="/house.css" title="House">
+<script>
+
+var countIoShown = 0;
+
+function saveConfig () {
+
+    var form = document.forms;
+    var newconfig = new Object();
+    newconfig.kasa = new Object();
+    newconfig.kasa.devices = new Array();
+
+    for (var i = 0; i < countIoShown; ++i) {
+
+        var prefix = 'kasa_'+i+'_';
+        var device = new Object();
+        device.name = form.iolistform[prefix+'name'].value;
+        if (!device.name) continue;
+        device.id = form.iolistform[prefix+'id'].value;
+        if (!device.id) continue;
+        var child = form.iolistform[prefix+'child'].value;
+        if (child.length)
+            device.child = child
+        var description = form.iolistform[prefix+'desc'].value;
+        if (description)
+            device.description = description;
+        newconfig.kasa.devices.push(device);
+    }
+
+    var command = new XMLHttpRequest();
+    command.open("POST", "/kasa/config");
+    command.setRequestHeader('Content-Type', 'application/json');
+    command.onreadystatechange = function () {
+        if (command.readyState === 4 && command.status !== 200) {
+            window.alert ('Operation failed (error '+command.status+')!');
+        }
+    }
+    command.send(JSON.stringify(newconfig));
+}
+
+function showPlug (name, id, child, description) {
+
+    var outer = document.createElement("tr");
+
+    var iolist = document.getElementsByClassName ('iolist')[0];
+    var prefix = 'kasa_'+countIoShown+'_';
+    var inner = document.createElement("td");
+    var entry = document.createElement("input");
+    entry.type = 'text';
+    entry.name = prefix+'name';
+    entry.value = name;
+    entry.placeholder = 'Name';
+    inner.appendChild(entry);
+    outer.appendChild(inner);
+
+    inner = document.createElement("td");
+    entry = document.createElement("input");
+    entry.type = 'text';
+    entry.name = prefix+'id';
+    entry.value = id;
+    entry.placeholder = 'ID';
+    entry.inputmode = 'numeric';
+    inner.appendChild(entry);
+    outer.appendChild(inner);
+
+    inner = document.createElement("td");
+    entry = document.createElement("input");
+    entry.type = 'text';
+    entry.name = prefix+'child';
+    entry.value = child;
+    entry.placeholder = 'Child ID';
+    entry.inputmode = 'numeric';
+    inner.appendChild(entry);
+    outer.appendChild(inner);
+
+    inner = document.createElement("td");
+    entry = document.createElement("input");
+    entry.type = 'text';
+    entry.name = prefix+'desc';
+    entry.placeholder = 'Text';
+    if (description)
+        entry.value = description;
+    else
+        entry.value = '';
+    inner.appendChild(entry);
+    outer.appendChild(inner);
+
+    iolist.appendChild(outer);
+    countIoShown += 1;
+}
+
+function addConfig () {
+    showPlug ('', '', '', '');
+}
+
+function kasaShowConfig (response) {
+
+   var iolist = document.getElementsByClassName ('iolist')[0];
+   var devices = response.kasa.devices;
+   for (var i = 0; i < devices.length; i++) {
+      var device = devices[i];
+      if (!device.child) device.child = '';
+      if (!device.description) device.description = '';
+      showPlug (device.name, device.id, device.child, device.description);
+   }
+}
+
+function kasaConfig () {
+    var command = new XMLHttpRequest();
+    command.open("GET", "/kasa/config");
+    command.onreadystatechange = function () {
+        if (command.readyState === 4 && command.status === 200) {
+            kasaShowConfig (JSON.parse(command.responseText));
+        }
+    }
+    command.send(null);
+}
+
+function kasaShowStatus (response) {
+    document.getElementById('portal').href =
+        'http://'+response.proxy+'/index.html';
+    document.getElementsByTagName('title')[0].innerHTML =
+        response.host+' - Kasa Devices';
+}
+
+function kasaStatus () {
+    var command = new XMLHttpRequest();
+    command.open("GET", "/kasa/status");
+    command.onreadystatechange = function () {
+        if (command.readyState === 4 && command.status === 200) {
+            kasaShowStatus (JSON.parse(command.responseText));
+        }
+    }
+    command.send(null);
+}
+
+window.onload = function() {
+   kasaConfig();
+   kasaStatus();
+};
+</script>
+<head>
+   <title>Kasa Devices</title>
+</head>
+<body>
+   <table class="housetopcontainer">
+   <tr><td>
+   <table class="housetop">
+   <tr>
+   <td><a id="portal" href="/index.html">Portal</a></td>
+   <td><a href="/kasa/index.html">Kasa</a></td>
+   <td><a href="/kasa/events.html">Events</a></td>
+   <td><span>Config</span></td>
+   </tr>
+   </table>
+   </td></tr>
+   </table>
+   <form name="iolistform">
+   <table class="housewidetable iolist">
+      <tr>
+         <th width="20%">NAME</th>
+         <th width="35%">ID</th>
+         <th width="10%">CHILD</th>
+         <th width="35%">DESCRIPTION</th>
+      </tr>
+   </table>
+   </form>
+   <div class="housebuttons">
+      <button class="actionbutton" onclick="addConfig()">Add</button>
+      <button class="actionbutton" onclick="saveConfig()">Save</button>
+   </div>
+</body>
+</html>
+
