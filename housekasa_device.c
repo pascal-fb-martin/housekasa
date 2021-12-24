@@ -460,7 +460,9 @@ const char *housekasa_device_live_config (char *buffer, int size) {
 static void housekasa_device_status_update (int device, int status) {
     if (device < 0) return;
     if (!Devices[device].detected)
-        houselog_event ("DEVICE", Devices[device].name, "DETECTED", "");
+        houselog_event ("DEVICE", Devices[device].name,
+                        "DETECTED", "ADDRESS %s",
+                        inet_ntoa(Devices[device].ipaddress.sin_addr));
     if (status != Devices[device].status) {
         if (Devices[device].pending &&
                 (status == Devices[device].commanded)) {
