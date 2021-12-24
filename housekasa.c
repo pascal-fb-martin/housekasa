@@ -46,7 +46,6 @@
 #include "housekasa_device.h"
 
 static int use_houseportal = 0;
-static char HostName[256];
 
 static void hc_help (const char *argv0) {
 
@@ -219,8 +218,6 @@ int main (int argc, const char **argv) {
 
     signal(SIGPIPE, SIG_IGN);
 
-    gethostname (HostName, sizeof(HostName));
-
     echttp_default ("-http-service=dynamic");
 
     echttp_open (argc, argv);
@@ -253,7 +250,7 @@ int main (int argc, const char **argv) {
 
     echttp_static_route ("/", "/usr/local/share/house/public");
     echttp_background (&housekasa_background);
-    houselog_event ("SERVICE", "kasa", "START", "ON %s", HostName);
+    houselog_event ("SERVICE", "kasa", "STARTED", "ON %s", houselog_host());
     echttp_loop();
 }
 
