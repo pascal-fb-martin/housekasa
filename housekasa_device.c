@@ -459,10 +459,6 @@ const char *housekasa_device_live_config (char *buffer, int size) {
 
 static void housekasa_device_status_update (int device, int status) {
     if (device < 0) return;
-    if (!Devices[device].detected)
-        houselog_event ("DEVICE", Devices[device].name,
-                        "DETECTED", "ADDRESS %s",
-                        inet_ntoa(Devices[device].ipaddress.sin_addr));
     if (status != Devices[device].status) {
         if (Devices[device].pending &&
                 (status == Devices[device].commanded)) {
@@ -482,7 +478,6 @@ static void housekasa_device_status_update (int device, int status) {
         }
         Devices[device].status = status;
     }
-    Devices[device].detected = time(0);
 }
 
 static const char *housekasa_device_json_string (ParserToken *json,
@@ -558,14 +553,21 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
                 housekasa_device_refresh_string
                     (&(Devices[device].name),
                      housekasa_device_json_string (json, child, ".alias"));
-                Devices[device].ipaddress = *addr;
                 houselog_event ("DEVICE", Devices[device].name, "DISCOVERED",
                                 "ADDRESS %s (CHILD %s)",
                                 inet_ntoa(addr->sin_addr), id);
                 DeviceListChanged = 1;
                 if (echttp_isdebug())
                      fprintf (stderr, "Device %s %s added\n", parent, id);
-                Devices[device].detected = time(0); // No "detected" event.
+                Devices[device].detected = now; // No "detected" event.
+            }
+            if (device > 0) {
+                Devices[device].ipaddress = *addr; // Keep latest address.
+                if (!Devices[device].detected)
+                    houselog_event ("DEVICE", Devices[device].name,
+                        "DETECTED", "ADDRESS %s",
+                        inet_ntoa(Devices[device].ipaddress.sin_addr));
+                Devices[device].detected = now;
             }
             housekasa_device_status_update
                 (device, housekasa_device_json_integer (json, child, ".state"));
