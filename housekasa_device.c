@@ -459,6 +459,10 @@ const char *housekasa_device_live_config (char *buffer, int size) {
 
 static void housekasa_device_status_update (int device, int status) {
     if (device < 0) return;
+    if (!Devices[device].detected)
+        houselog_event ("DEVICE", Devices[device].name,
+            "DETECTED", "ADDRESS %s",
+            inet_ntoa(Devices[device].ipaddress.sin_addr));
     if (status != Devices[device].status) {
         if (Devices[device].pending &&
                 (status == Devices[device].commanded)) {
@@ -478,6 +482,7 @@ static void housekasa_device_status_update (int device, int status) {
         }
         Devices[device].status = status;
     }
+    Devices[device].detected = time(0);
 }
 
 static const char *housekasa_device_json_string (ParserToken *json,
@@ -518,7 +523,7 @@ int housekasa_device_json_array_object (ParserToken *json,
 }
 
 static void housekasa_device_getinfo (ParserToken *json, int count,
-                                      struct sockaddr_in * addr,
+                                      struct sockaddr_in *addr,
                                       const char *data) {
 
     int device;
@@ -533,6 +538,7 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
                         "DEVICE", "no valid device ID in: %s", data);
         return;
     }
+    if (echttp_isdebug()) fprintf (stderr, "Plug %s\n", id);
     int children =
         housekasa_device_json_array (json, 0, ".system.get_sysinfo.children");
     if (children >= 0) {
@@ -545,7 +551,7 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
             int child = housekasa_device_json_array_object (json, children, i);
             id = housekasa_device_json_string (json, child, ".id");
             if (!id) continue;
-            fprintf (stderr, "Child plug %s\n", id);
+            if (echttp_isdebug()) fprintf (stderr, "Child plug %s\n", id);
             device = housekasa_device_id_search (parent, id);
             if (device < 0 && DevicesCount < DevicesSpace) {
                 device = housekasa_device_add (parent, id);
@@ -561,13 +567,10 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
                      fprintf (stderr, "Device %s %s added\n", parent, id);
                 Devices[device].detected = now; // No "detected" event.
             }
-            if (device > 0) {
+            if (device >= 0) {
+                if (echttp_isdebug())
+                    fprintf (stderr, "Child plug %s (device %s)\n", id, Devices[device].name);
                 Devices[device].ipaddress = *addr; // Keep latest address.
-                if (!Devices[device].detected)
-                    houselog_event ("DEVICE", Devices[device].name,
-                        "DETECTED", "ADDRESS %s",
-                        inet_ntoa(Devices[device].ipaddress.sin_addr));
-                Devices[device].detected = now;
             }
             housekasa_device_status_update
                 (device, housekasa_device_json_integer (json, child, ".state"));
@@ -580,14 +583,16 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
                 housekasa_device_refresh_string
                     (&(Devices[device].name),
                      housekasa_device_json_string(json, 0, ".system.get_sysinfo.alias"));
-                Devices[device].ipaddress = *addr;
-                houselog_event ("DEVICE", Devices[device].name, "DETECTED",
+                houselog_event ("DEVICE", Devices[device].name, "DISCOVERED",
                                 "ADDRESS %s",
                                 inet_ntoa(addr->sin_addr));
                 DeviceListChanged = 1;
                 if (echttp_isdebug())
                      fprintf (stderr, "Device %s added\n", id);
             }
+        }
+        if (device > 0) {
+            Devices[device].ipaddress = *addr; // Keep latest address.
         }
         housekasa_device_status_update
             (device,
