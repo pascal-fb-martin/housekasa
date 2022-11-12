@@ -447,6 +447,9 @@ const char *housekasa_device_live_config (char *buffer, int size) {
         int device = echttp_json_add_object (context, items, 0);
         if (Devices[i].name && Devices[i].name[0])
             echttp_json_add_string (context, device, "name", Devices[i].name);
+            echttp_json_add_string
+                (context, device, "ip", 
+                 inet_ntoa(Devices[i].ipaddress.sin_addr));
         if (Devices[i].id && Devices[i].id[0])
             echttp_json_add_string (context, device, "id", Devices[i].id);
         if (Devices[i].child && Devices[i].child[0])
