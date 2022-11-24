@@ -317,7 +317,8 @@ void housekasa_device_periodic (time_t now) {
     for (i = 0; i < DevicesCount; ++i) {
 
         if (now >= Devices[i].last_sense + 35) {
-            housekasa_device_sense(&(Devices[i].ipaddress));
+            if (Devices[i].ipaddress.sin_addr.s_addr != 0)
+                housekasa_device_sense(&(Devices[i].ipaddress));
             Devices[i].last_sense = now;
         }
 
