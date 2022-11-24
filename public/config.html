@@ -5,6 +5,7 @@
 <script>
 
 var countIoShown = 0;
+var countNetShown = 0;
 
 function saveConfig () {
 
@@ -30,6 +31,16 @@ function saveConfig () {
         newconfig.kasa.devices.push(device);
     }
 
+    if (countNetShown > 0) {
+        newconfig.kasa.net = new Array();
+        var j = 0;
+        for (var i = 0; i < countNetShown; ++i) {
+            newconfig.kasa.net[j] = form.netlistform['kasanet_'+i].value;
+            if (!newconfig.kasa.net[j]) continue;
+            j += 1;
+        }
+    }
+
     var command = new XMLHttpRequest();
     command.open("POST", "/kasa/config");
     command.setRequestHeader('Content-Type', 'application/json');
@@ -39,6 +50,28 @@ function saveConfig () {
         }
     }
     command.send(JSON.stringify(newconfig));
+}
+
+function showNetwork (addr) {
+
+    var outer = document.createElement("tr");
+
+    var netlist = document.getElementsByClassName ('netlist')[0];
+    var prefix = 'kasanet_'+countNetShown;
+    var inner = document.createElement("td");
+    var entry = document.createElement("input");
+    entry.type = 'text';
+    entry.name = prefix;
+    entry.value = addr;
+    entry.placeholder = "IP Address (dot notation)";
+    inner.appendChild(entry);
+    outer.appendChild(inner);
+    netlist.appendChild(outer);
+    countNetShown += 1;
+}
+
+function addNetwork () {
+    showNetwork ('');
 }
 
 function showPlug (name, id, child, description) {
@@ -92,7 +125,7 @@ function showPlug (name, id, child, description) {
     countIoShown += 1;
 }
 
-function addConfig () {
+function addPlug () {
     showPlug ('', '', '', '');
 }
 
@@ -106,6 +139,10 @@ function kasaShowConfig (response) {
       if (!device.description) device.description = '';
       showPlug (device.name, device.id, device.child, device.description);
    }
+
+   var nets = response.kasa.net;
+   if (nets)
+      for (var i = 0; i < nets.length; i++) showNetwork (nets[i]);
 }
 
 function kasaConfig () {
@@ -158,6 +195,7 @@ window.onload = function() {
    </table>
    </td></tr>
    </table>
+   <h1>Devices</h1>
    <form name="iolistform">
    <table class="housewidetable iolist">
       <tr>
@@ -168,8 +206,17 @@ window.onload = function() {
       </tr>
    </table>
    </form>
-   <div class="housebuttons">
-      <button class="actionbutton" onclick="addConfig()">Add</button>
+   <h1>Networks</h1>
+   <form name="netlistform">
+   <table class="housewidetable netlist">
+      <tr>
+         <th width="100%">IP ADDRESS</th>
+      </tr>
+   </table>
+   </form>
+   <div style="margin: 15px; float: right" class="housebuttons">
+      <button class="actionbutton" onclick="addPlug()">Add Device</button>
+      <button class="actionbutton" onclick="addNetwork()">Add Network</button>
       <button class="actionbutton" onclick="saveConfig()">Save</button>
    </div>
 </body>

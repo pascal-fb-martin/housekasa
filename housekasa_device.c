@@ -127,9 +127,12 @@ static int DevicesCount = 0;
 static int DevicesSpace = 0;
 
 static int KasaDevicePort = 9999;
-
 static int KasaSocket = -1;
-static struct sockaddr_in KasaBroadcast;
+
+#define KASABROADCASTMAX 64
+
+static int KasaBroadcastCount = 0;
+static struct sockaddr_in KasaBroadcast[KASABROADCASTMAX];
 
 
 int housekasa_device_count (void) {
@@ -194,9 +197,10 @@ static int housekasa_device_address_search (struct sockaddr_in *addr) {
 
 static void housekasa_device_socket (void) {
 
-    KasaBroadcast.sin_family = AF_INET;
-    KasaBroadcast.sin_port = htons(KasaDevicePort);
-    KasaBroadcast.sin_addr.s_addr = INADDR_ANY;
+    KasaBroadcast[0].sin_family = AF_INET;
+    KasaBroadcast[0].sin_port = htons(KasaDevicePort);
+    KasaBroadcast[0].sin_addr.s_addr = INADDR_BROADCAST;
+    KasaBroadcastCount = 1;
 
     KasaSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (KasaSocket < 0) {
@@ -211,8 +215,6 @@ static void housekasa_device_socket (void) {
                         "cannot broadcast: %s", strerror(errno));
         exit(1);
     }
-
-    KasaBroadcast.sin_addr.s_addr = INADDR_BROADCAST;
 
     houselog_trace (HOUSE_INFO, "DEVICE", "UDP port %d is now open", KasaDevicePort);
 }
@@ -304,7 +306,8 @@ void housekasa_device_periodic (time_t now) {
     int i;
 
     if (now >= LastSense + 60) {
-        housekasa_device_sense(&KasaBroadcast);
+        for (i = 0; i < KasaBroadcastCount; ++i)
+            housekasa_device_sense(KasaBroadcast+i);
         LastSense = now;
     }
 
@@ -428,6 +431,26 @@ const char *housekasa_device_refresh (void) {
         if (echttp_isdebug()) fprintf (stderr, "load device %s, ID %s%s\n", Devices[idx].name, Devices[idx].id, Devices[i].child);
         housekasa_device_reset (idx, Devices[idx].status);
     }
+
+    devices = houseconfig_array (0, ".kasa.net");
+    if (devices < 0) return "cannot find network array";
+    requested = houseconfig_array_length (devices);
+    if (echttp_isdebug()) fprintf (stderr, "found %d networks", requested);
+    if (requested >= KASABROADCASTMAX) requested = KASABROADCASTMAX - 1;
+
+    KasaBroadcastCount = 1;
+    for (i = 1; i < requested && KasaBroadcastCount < KASABROADCASTMAX; ++i) {
+        KasaBroadcast[KasaBroadcastCount] = KasaBroadcast[0];
+        char index[10];
+        snprintf (index, sizeof(index), "[%d]", i);
+        const char *addr = houseconfig_string(devices, index);
+        if (! inet_aton(addr, &(KasaBroadcast[KasaBroadcastCount].sin_addr))) {
+            if (echttp_isdebug())
+                fprintf (stderr, "invalid broadcast IP address %s", addr);
+        } else {
+            KasaBroadcastCount += 1;
+        }
+    }
     return 0;
 }
 
@@ -457,6 +480,14 @@ const char *housekasa_device_live_config (char *buffer, int size) {
             echttp_json_add_string (context, device, "child", Devices[i].child);
         if (Devices[i].description && Devices[i].description[0])
             echttp_json_add_string (context, device, "description", Devices[i].description);
+    }
+
+    if (KasaBroadcastCount > 1) {
+        items = echttp_json_add_array (context, top, "net");
+        for (i = 1; i < KasaBroadcastCount; ++i) {
+            const char *addr = inet_ntoa(KasaBroadcast[i].sin_addr);
+            echttp_json_add_string (context, items, 0, addr);
+        }
     }
     return echttp_json_export (context, buffer, size);
 }
