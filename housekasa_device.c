@@ -439,7 +439,7 @@ const char *housekasa_device_refresh (void) {
     if (requested >= KASABROADCASTMAX) requested = KASABROADCASTMAX - 1;
 
     KasaBroadcastCount = 1;
-    for (i = 1; i < requested && KasaBroadcastCount < KASABROADCASTMAX; ++i) {
+    for (i = 1; i < requested; ++i) {
         KasaBroadcast[KasaBroadcastCount] = KasaBroadcast[0];
         char index[10];
         snprintf (index, sizeof(index), "[%d]", i);
@@ -448,7 +448,9 @@ const char *housekasa_device_refresh (void) {
             if (echttp_isdebug())
                 fprintf (stderr, "invalid broadcast IP address %s", addr);
         } else {
+            houselog_event ("NETWORK", addr, "ADDED", "");
             KasaBroadcastCount += 1;
+            if (KasaBroadcastCount >= KASABROADCASTMAX) break;
         }
     }
     return 0;
