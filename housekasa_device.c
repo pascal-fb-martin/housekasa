@@ -439,7 +439,7 @@ const char *housekasa_device_refresh (void) {
     if (requested >= KASABROADCASTMAX) requested = KASABROADCASTMAX - 1;
 
     KasaBroadcastCount = 1;
-    for (i = 1; i < requested; ++i) {
+    for (i = 0; i < requested; ++i) {
         KasaBroadcast[KasaBroadcastCount] = KasaBroadcast[0];
         char index[10];
         snprintf (index, sizeof(index), "[%d]", i);
