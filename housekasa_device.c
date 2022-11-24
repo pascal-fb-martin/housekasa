@@ -435,7 +435,7 @@ const char *housekasa_device_refresh (void) {
     devices = houseconfig_array (0, ".kasa.net");
     if (devices < 0) return "cannot find network array";
     requested = houseconfig_array_length (devices);
-    if (echttp_isdebug()) fprintf (stderr, "found %d networks", requested);
+    if (echttp_isdebug()) fprintf (stderr, "found %d networks\n", requested);
     if (requested >= KASABROADCASTMAX) requested = KASABROADCASTMAX - 1;
 
     KasaBroadcastCount = 1;
@@ -444,9 +444,11 @@ const char *housekasa_device_refresh (void) {
         char index[10];
         snprintf (index, sizeof(index), "[%d]", i);
         const char *addr = houseconfig_string(devices, index);
+        if (echttp_isdebug())
+            fprintf (stderr, "load broadcast IP address %s\n", addr);
         if (! inet_aton(addr, &(KasaBroadcast[KasaBroadcastCount].sin_addr))) {
             if (echttp_isdebug())
-                fprintf (stderr, "invalid broadcast IP address %s", addr);
+                fprintf (stderr, "invalid broadcast IP address %s\n", addr);
         } else {
             houselog_event ("NETWORK", addr, "ADDED", "");
             KasaBroadcastCount += 1;
