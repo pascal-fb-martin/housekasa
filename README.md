@@ -11,6 +11,7 @@ This service is not really meant to be accessed directly by end-users: these sho
 
 So far HouseKasa has been tested with the following US models:
 * HS220
+* HS200
 * KP400
 * EP10
 
