@@ -484,7 +484,8 @@ const char *housekasa_device_refresh (void) {
             if (echttp_isdebug())
                 fprintf (stderr, "invalid address %s\n", addr);
         } else {
-            houselog_event ("NETWORK", addr, "ADDED", "");
+            houselog_event ("NETWORK", addr, "ADDED", "AS %s",
+                            inet_ntoa(KasaSense[KasaSenseCount].addr.sin_addr));
             KasaSense[KasaSenseCount].name = strdup(addr);
             KasaSenseCount += 1;
             if (KasaSenseCount >= KASASENSEMAX) break;
