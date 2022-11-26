@@ -130,10 +130,10 @@ static int DevicesSpace = 0;
 static int KasaDevicePort = 9999;
 static int KasaSocket = -1;
 
-#define KASABROADCASTMAX 64
+#define KASASENSEMAX 64
 
-static int KasaBroadcastCount = 0;
-static struct sockaddr_in KasaBroadcast[KASABROADCASTMAX];
+static int KasaSenseCount = 0;
+static struct sockaddr_in KasaSense[KASASENSEMAX];
 
 
 int housekasa_device_count (void) {
@@ -198,10 +198,10 @@ static int housekasa_device_address_search (struct sockaddr_in *addr) {
 
 static void housekasa_device_socket (void) {
 
-    KasaBroadcast[0].sin_family = AF_INET;
-    KasaBroadcast[0].sin_port = htons(KasaDevicePort);
-    KasaBroadcast[0].sin_addr.s_addr = INADDR_BROADCAST;
-    KasaBroadcastCount = 1;
+    KasaSense[0].sin_family = AF_INET;
+    KasaSense[0].sin_port = htons(KasaDevicePort);
+    KasaSense[0].sin_addr.s_addr = INADDR_BROADCAST;
+    KasaSenseCount = 1;
 
     KasaSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (KasaSocket < 0) {
@@ -307,8 +307,8 @@ void housekasa_device_periodic (time_t now) {
     int i;
 
     if (now >= LastSense + 60) {
-        for (i = 0; i < KasaBroadcastCount; ++i)
-            housekasa_device_sense(KasaBroadcast+i);
+        for (i = 0; i < KasaSenseCount; ++i)
+            housekasa_device_sense(KasaSense+i);
         LastSense = now;
     }
 
@@ -382,6 +382,23 @@ static int housekasa_device_add (const char *model,
                     "DEVICE", "no space for device %s", id);
 }
 
+static int housekasa_device_gethost (const char *name, struct sockaddr_in *a) {
+    struct addrinfo hints;
+    struct addrinfo *resolved;
+
+    hints.ai_flags = AI_ADDRCONFIG;
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    if (getaddrinfo (name, 0, &hints, &resolved)) return 0;
+    if (resolved) {
+        a->sin_addr.s_addr =
+            ((struct sockaddr_in *)(resolved->ai_addr))->sin_addr.s_addr;
+        freeaddrinfo (resolved);
+        return 1;
+    }
+    return 0;
+}
+
 const char *housekasa_device_refresh (void) {
 
     int i;
@@ -441,23 +458,23 @@ const char *housekasa_device_refresh (void) {
     if (devices < 0) return "cannot find network array";
     requested = houseconfig_array_length (devices);
     if (echttp_isdebug()) fprintf (stderr, "found %d networks\n", requested);
-    if (requested >= KASABROADCASTMAX) requested = KASABROADCASTMAX - 1;
+    if (requested >= KASASENSEMAX) requested = KASASENSEMAX - 1;
 
-    KasaBroadcastCount = 1;
+    KasaSenseCount = 1;
     for (i = 0; i < requested; ++i) {
-        KasaBroadcast[KasaBroadcastCount] = KasaBroadcast[0];
+        KasaSense[KasaSenseCount] = KasaSense[0];
         char index[10];
         snprintf (index, sizeof(index), "[%d]", i);
         const char *addr = houseconfig_string(devices, index);
         if (echttp_isdebug())
             fprintf (stderr, "load broadcast IP address %s\n", addr);
-        if (! inet_aton(addr, &(KasaBroadcast[KasaBroadcastCount].sin_addr))) {
+        if (! housekasa_device_gethost(addr, &(KasaSense[KasaSenseCount]))) {
             if (echttp_isdebug())
                 fprintf (stderr, "invalid broadcast IP address %s\n", addr);
         } else {
             houselog_event ("NETWORK", addr, "ADDED", "");
-            KasaBroadcastCount += 1;
-            if (KasaBroadcastCount >= KASABROADCASTMAX) break;
+            KasaSenseCount += 1;
+            if (KasaSenseCount >= KASASENSEMAX) break;
         }
     }
     return 0;
@@ -493,10 +510,10 @@ const char *housekasa_device_live_config (char *buffer, int size) {
             echttp_json_add_string (context, device, "description", Devices[i].description);
     }
 
-    if (KasaBroadcastCount > 1) {
+    if (KasaSenseCount > 1) {
         items = echttp_json_add_array (context, top, "net");
-        for (i = 1; i < KasaBroadcastCount; ++i) {
-            const char *addr = inet_ntoa(KasaBroadcast[i].sin_addr);
+        for (i = 1; i < KasaSenseCount; ++i) {
+            const char *addr = inet_ntoa(KasaSense[i].sin_addr);
             echttp_json_add_string (context, items, 0, addr);
         }
     }
