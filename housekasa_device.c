@@ -108,6 +108,7 @@
 
 struct DeviceMap {
     char *name;
+    char *model;
     char *id;
     char *child;
     char *description;
@@ -365,10 +366,12 @@ static void housekasa_device_refresh_string (char **store, const char *value) {
     }
 }
 
-static int housekasa_device_add (const char *id, const char *child) {
+static int housekasa_device_add (const char *model,
+                                 const char *id, const char *child) {
     if (DevicesCount < DevicesSpace) {
         int i = DevicesCount++;
         Devices[i].id = strdup (id);
+        Devices[i].model = model?strdup (model):0;
         if (child)
             Devices[i].child = strdup(child);
         housekasa_device_reset (i, 0);
@@ -415,12 +418,13 @@ const char *housekasa_device_refresh (void) {
     for (i = 0; i < requested; ++i) {
         int device = houseconfig_array_object (devices, i);
         if (device <= 0) continue;
+        const char *model = houseconfig_string (device, ".model");
         const char *id = houseconfig_string (device, ".id");
         if (!id) continue;
         const char *child = houseconfig_string (device, ".child");
         int idx = housekasa_device_id_search (id, child);
         if (idx >= 0) continue; // Duplicate?
-        idx = housekasa_device_add (id, child);
+        idx = housekasa_device_add (model, id, child);
         housekasa_device_refresh_string (&(Devices[idx].name),
                                          houseconfig_string (device, ".name"));
         housekasa_device_refresh_string (&(Devices[idx].id),
@@ -479,6 +483,8 @@ const char *housekasa_device_live_config (char *buffer, int size) {
             echttp_json_add_string
                 (context, device, "ip", 
                  inet_ntoa(Devices[i].ipaddress.sin_addr));
+        if (Devices[i].model && Devices[i].model[0])
+            echttp_json_add_string (context, device, "model", Devices[i].model);
         if (Devices[i].id && Devices[i].id[0])
             echttp_json_add_string (context, device, "id", Devices[i].id);
         if (Devices[i].child && Devices[i].child[0])
@@ -578,7 +584,11 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
                         "DEVICE", "no valid device ID in: %s", data);
         return;
     }
-    if (echttp_isdebug()) fprintf (stderr, "Plug %s\n", id);
+    const char *model =
+        housekasa_device_json_string (json, 0, ".system.get_sysinfo.model");
+    if (!model) model = "(unknown)";
+
+    if (echttp_isdebug()) fprintf (stderr, "Device model %s: %s\n", model, id);
     int children =
         housekasa_device_json_array (json, 0, ".system.get_sysinfo.children");
     if (children >= 0) {
@@ -594,7 +604,7 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
             if (echttp_isdebug()) fprintf (stderr, "Child plug %s\n", id);
             device = housekasa_device_id_search (parent, id);
             if (device < 0 && DevicesCount < DevicesSpace) {
-                device = housekasa_device_add (parent, id);
+                device = housekasa_device_add (model, parent, id);
                 if (device < 0) return;
                 housekasa_device_refresh_string
                     (&(Devices[device].name),
@@ -611,6 +621,8 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
                 if (echttp_isdebug())
                     fprintf (stderr, "Child plug %s (device %s)\n", id, Devices[device].name);
                 Devices[device].ipaddress = *addr; // Keep latest address.
+                if (!Devices[device].model)
+                    Devices[device].model = strdup(model);
             }
             housekasa_device_status_update
                 (device, housekasa_device_json_integer (json, child, ".state"));
@@ -618,7 +630,7 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
     } else {
         device = housekasa_device_id_search (id, 0);
         if (device < 0 && DevicesCount < DevicesSpace) {
-            device = housekasa_device_add (id, 0);
+            device = housekasa_device_add (model, id, 0);
             if (device >= 0) {
                 housekasa_device_refresh_string
                     (&(Devices[device].name),
@@ -633,6 +645,8 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
         }
         if (device > 0) {
             Devices[device].ipaddress = *addr; // Keep latest address.
+            if (!Devices[device].model)
+                Devices[device].model = strdup(model);
         }
         housekasa_device_status_update
             (device,

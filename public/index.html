@@ -89,6 +89,15 @@ function kasaShowConfig (response) {
 
         inner = document.createElement("td");
         label = document.createElement("span");
+        if (device.model)
+            label.innerHTML = device.model;
+        else
+            label.innerHTML = '';
+        inner.appendChild(label);
+        outer.appendChild(inner);
+
+        inner = document.createElement("td");
+        label = document.createElement("span");
         if (device.ip)
             label.innerHTML = device.ip;
         else
@@ -147,8 +156,9 @@ window.onload = function() {
          <th width="14%">NAME</th>
          <th width="10%">STATE</th>
          <th width="10%">CONTROL</th>
+         <th width="10%">MODEL</th>
          <th width="14%">IP</th>
-         <th width="52%">DESCRIPTION</th>
+         <th width="42%">DESCRIPTION</th>
       </tr>
    </table>
 </body>
