@@ -386,9 +386,10 @@ static int housekasa_device_gethost (const char *name, struct sockaddr_in *a) {
     struct addrinfo hints;
     struct addrinfo *resolved;
 
-    hints.ai_flags = AI_ADDRCONFIG;
+    hints.ai_flags = 0;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = 0;
     if (getaddrinfo (name, 0, &hints, &resolved)) return 0;
     if (resolved) {
         a->sin_addr.s_addr =
@@ -470,7 +471,7 @@ const char *housekasa_device_refresh (void) {
             fprintf (stderr, "load broadcast IP address %s\n", addr);
         if (! housekasa_device_gethost(addr, &(KasaSense[KasaSenseCount]))) {
             if (echttp_isdebug())
-                fprintf (stderr, "invalid broadcast IP address %s\n", addr);
+                fprintf (stderr, "invalid address %s\n", addr);
         } else {
             houselog_event ("NETWORK", addr, "ADDED", "");
             KasaSenseCount += 1;
