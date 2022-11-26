@@ -132,8 +132,12 @@ static int KasaSocket = -1;
 
 #define KASASENSEMAX 64
 
+struct NetworkMap {
+    char *name;
+    struct sockaddr_in addr;
+};
 static int KasaSenseCount = 0;
-static struct sockaddr_in KasaSense[KASASENSEMAX];
+static struct NetworkMap KasaSense[KASASENSEMAX];
 
 
 int housekasa_device_count (void) {
@@ -198,9 +202,10 @@ static int housekasa_device_address_search (struct sockaddr_in *addr) {
 
 static void housekasa_device_socket (void) {
 
-    KasaSense[0].sin_family = AF_INET;
-    KasaSense[0].sin_port = htons(KasaDevicePort);
-    KasaSense[0].sin_addr.s_addr = INADDR_BROADCAST;
+    KasaSense[0].name = 0;
+    KasaSense[0].addr.sin_family = AF_INET;
+    KasaSense[0].addr.sin_port = htons(KasaDevicePort);
+    KasaSense[0].addr.sin_addr.s_addr = INADDR_BROADCAST;
     KasaSenseCount = 1;
 
     KasaSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -308,7 +313,7 @@ void housekasa_device_periodic (time_t now) {
 
     if (now >= LastSense + 60) {
         for (i = 0; i < KasaSenseCount; ++i)
-            housekasa_device_sense(KasaSense+i);
+            housekasa_device_sense(&(KasaSense[i].addr));
         LastSense = now;
     }
 
@@ -461,19 +466,26 @@ const char *housekasa_device_refresh (void) {
     if (echttp_isdebug()) fprintf (stderr, "found %d networks\n", requested);
     if (requested >= KASASENSEMAX) requested = KASASENSEMAX - 1;
 
+    for (i = 0; i < KasaSenseCount; ++i) {
+        if (KasaSense[i].name) free(KasaSense[i].name);
+        KasaSense[i].name = 0;
+    }
     KasaSenseCount = 1;
+
     for (i = 0; i < requested; ++i) {
         KasaSense[KasaSenseCount] = KasaSense[0];
         char index[10];
         snprintf (index, sizeof(index), "[%d]", i);
         const char *addr = houseconfig_string(devices, index);
+        if ((!addr) || (addr[0] == 0)) continue;
         if (echttp_isdebug())
             fprintf (stderr, "load broadcast IP address %s\n", addr);
-        if (! housekasa_device_gethost(addr, &(KasaSense[KasaSenseCount]))) {
+        if (!housekasa_device_gethost(addr,&(KasaSense[KasaSenseCount].addr))) {
             if (echttp_isdebug())
                 fprintf (stderr, "invalid address %s\n", addr);
         } else {
             houselog_event ("NETWORK", addr, "ADDED", "");
+            KasaSense[KasaSenseCount].name = strdup(addr);
             KasaSenseCount += 1;
             if (KasaSenseCount >= KASASENSEMAX) break;
         }
@@ -514,8 +526,8 @@ const char *housekasa_device_live_config (char *buffer, int size) {
     if (KasaSenseCount > 1) {
         items = echttp_json_add_array (context, top, "net");
         for (i = 1; i < KasaSenseCount; ++i) {
-            const char *addr = inet_ntoa(KasaSense[i].sin_addr);
-            echttp_json_add_string (context, items, 0, addr);
+            if (KasaSense[i].name && KasaSense[i].name[0])
+                echttp_json_add_string (context, items, 0, KasaSense[i].name);
         }
     }
     return echttp_json_export (context, buffer, size);
