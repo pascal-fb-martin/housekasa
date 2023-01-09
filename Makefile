@@ -21,15 +21,17 @@ kasacmd: kasacmd.c
 	gcc -g -O -o kasacmd kasacmd.c
 
 install:
-	if [ -e /etc/init.d/housekasa ] ; then systemctl stop housekasa ; fi
+	if [ -e /etc/init.d/housekasa ] ; then systemctl stop housekasa ; systemctl disable housekasa ; rm -f /etc/init.d/housekasa ; fi
+	if [ -e /lib/systemd/system/housekasa.service ] ; then systemctl stop housekasa ; systemctl disable housekasa ; rm -f /lib/systemd/system/housekasa.service ; fi
 	mkdir -p /usr/local/bin
 	mkdir -p /var/lib/house
 	mkdir -p /etc/house
-	rm -f /usr/local/bin/housekasa /etc/init.d/housekasa
+	rm -f /usr/local/bin/housekasa
 	cp housekasa kasacmd /usr/local/bin
-	cp init.debian /etc/init.d/housekasa
-	chown root:root /usr/local/bin/housekasa /usr/local/bin/kasacmd /etc/init.d/housekasa
-	chmod 755 /usr/local/bin/housekasa /usr/local/bin/kasacmd /etc/init.d/housekasa
+	chown root:root /usr/local/bin/housekasa /usr/local/bin/kasacmd
+	chmod 755 /usr/local/bin/housekasa /usr/local/bin/kasacmd
+	cp systemd.service /lib/systemd/system/housekasa.service
+	chown root:root /lib/systemd/system/housekasa.service
 	mkdir -p $(SHARE)/public/kasa
 	chmod 755 $(SHARE) $(SHARE)/public $(SHARE)/public/kasa
 	cp public/* $(SHARE)/public/kasa
@@ -43,7 +45,8 @@ install:
 uninstall:
 	systemctl stop housekasa
 	systemctl disable housekasa
-	rm -f /usr/local/bin/housekasa /usr/local/bin/kasacmd /etc/init.d/housekasa
+	rm -f /usr/local/bin/housekasa /usr/local/bin/kasacmd
+	rm -f /lib/systemd/system/housekasa.service /etc/init.d/housekasa
 	rm -rf $(SHARE)/public/kasa
 	systemctl daemon-reload
 

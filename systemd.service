@@ -1,0 +1,12 @@
+[Unit]
+Description=the house TP-Link Kasa device control service
+After=network-online.target houseportal.service
+
+[Service]
+EnvironmentFile=-/etc/default/housekasa
+EnvironmentFile=-/etc/sysconfig/housekasa
+ExecStart=/usr/local/bin/housekasa $OPTS
+
+[Install]
+WantedBy=multi-user.target
+
