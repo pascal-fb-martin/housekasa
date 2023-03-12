@@ -12,13 +12,13 @@ clean:
 rebuild: clean all
 
 %.o: %.c
-	gcc -c -g -O -o $@ $<
+	gcc -c -Os -o $@ $<
 
 housekasa: $(OBJS)
-	gcc -g -O -o housekasa $(OBJS) -lhouseportal -lechttp -lssl -lcrypto -lgpiod -lrt
+	gcc -Os -o housekasa $(OBJS) -lhouseportal -lechttp -lssl -lcrypto -lgpiod -lrt
 
 kasacmd: kasacmd.c
-	gcc -g -O -o kasacmd kasacmd.c
+	gcc -Os -o kasacmd kasacmd.c
 
 install:
 	if [ -e /etc/init.d/housekasa ] ; then systemctl stop housekasa ; systemctl disable housekasa ; rm -f /etc/init.d/housekasa ; fi
