@@ -419,17 +419,17 @@ const char *housekasa_device_refresh (void) {
     }
     DevicesCount = 0;
 
-    if (houseconfig_size() > 0) {
-        devices = houseconfig_array (0, ".kasa.devices");
-        if (devices < 0) return "cannot find devices array";
+    if (houseconfig_size() <= 0) return 0;
 
-        requested = houseconfig_array_length (devices);
-        if (echttp_isdebug()) fprintf (stderr, "found %d devices\n", requested);
-    }
-    int needed = requested + 32;
+    devices = houseconfig_array (0, ".kasa.devices");
+    if (devices < 0) return "cannot find devices array";
+
+    requested = houseconfig_array_length (devices);
+    if (echttp_isdebug()) fprintf (stderr, "found %d devices\n", requested);
 
     // Allocate, or reallocate without loosing what we already have.
     //
+    int needed = requested + 32;
     if (needed > DevicesSpace) {
         Devices = realloc (Devices, needed * sizeof(struct DeviceMap));
         memset (Devices+DevicesSpace, 0,
