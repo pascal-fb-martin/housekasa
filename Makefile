@@ -1,10 +1,30 @@
+# HouseKasa - A simple home web server for control of TP-Link Kasa devices.
+#
+# Copyright 2023, Pascal Martin
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor,
+# Boston, MA  02110-1301, USA.
+
+HAPP=housekasa
+HROOT=/usr/local
+SHARE=$(HROOT)/share/house
+
+# Application build. --------------------------------------------
 
 OBJS= housekasa_device.o housekasa.o
 LIBOJS=
-
-SHARE=/usr/local/share/house
-
-# Local build ---------------------------------------------------
 
 all: housekasa kasacmd
 
@@ -24,14 +44,14 @@ kasacmd: kasacmd.c
 
 # Distribution agnostic file installation -----------------------
 
-install-files:
-	mkdir -p /usr/local/bin
+install-app:
+	mkdir -p $(HROOT)/bin
 	mkdir -p /var/lib/house
 	mkdir -p /etc/house
-	rm -f /usr/local/bin/housekasa
-	cp housekasa kasacmd /usr/local/bin
-	chown root:root /usr/local/bin/housekasa /usr/local/bin/kasacmd
-	chmod 755 /usr/local/bin/housekasa /usr/local/bin/kasacmd
+	rm -f $(HROOT)/bin/housekasa
+	cp housekasa kasacmd $(HROOT)/bin
+	chown root:root $(HROOT)/bin/housekasa $(HROOT)/bin/kasacmd
+	chmod 755 $(HROOT)/bin/housekasa $(HROOT)/bin/kasacmd
 	mkdir -p $(SHARE)/public/kasa
 	chmod 755 $(SHARE) $(SHARE)/public $(SHARE)/public/kasa
 	cp public/* $(SHARE)/public/kasa
@@ -39,49 +59,16 @@ install-files:
 	chmod 644 $(SHARE)/public/kasa/*
 	touch /etc/default/housekasa
 
-uninstall-files:
-	rm -f /usr/local/bin/housekasa /usr/local/bin/kasacmd
+uninstall-app:
+	rm -f $(HROOT)/bin/housekasa $(HROOT)/bin/kasacmd
 	rm -rf $(SHARE)/public/kasa
+
+purge-app:
 
 purge-config:
 	rm -rf /etc/house/kasa.config /etc/default/housekasa
 
-# Distribution agnostic systemd support -------------------------
+# System installation. ------------------------------------------
 
-install-systemd:
-	cp systemd.service /lib/systemd/system/housekasa.service
-	chown root:root /lib/systemd/system/housekasa.service
-	systemctl daemon-reload
-	systemctl enable housekasa
-	systemctl start housekasa
-
-uninstall-systemd:
-	if [ -e /etc/init.d/housekasa ] ; then systemctl stop housekasa ; systemctl disable housekasa ; rm -f /etc/init.d/housekasa ; fi
-	if [ -e /lib/systemd/system/housekasa.service ] ; then systemctl stop housekasa ; systemctl disable housekasa ; rm -f /lib/systemd/system/housekasa.service ; systemctl daemon-reload ; fi
-
-stop-systemd: uninstall-systemd
-
-# Debian GNU/Linux install --------------------------------------
-
-install-debian: stop-systemd install-files install-systemd
-
-uninstall-debian: uninstall-systemd uninstall-files
-
-purge-debian: uninstall-debian purge-config
-
-# Void Linux install --------------------------------------------
-
-install-void: install-files
-
-uninstall-void: uninstall-files
-
-purge-void: uninstall-void purge-config
-
-# Default install (Debian GNU/Linux) ----------------------------
-
-install: install-debian
-
-uninstall: uninstall-debian
-
-purge: purge-debian
+include $(SHARE)/install.mak
 
