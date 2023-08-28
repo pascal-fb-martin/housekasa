@@ -37,7 +37,7 @@ rebuild: clean all
 	gcc -c -Os -o $@ $<
 
 housekasa: $(OBJS)
-	gcc -Os -o housekasa $(OBJS) -lhouseportal -lechttp -lssl -lcrypto -lgpiod -lrt
+	gcc -Os -o housekasa $(OBJS) -lhouseportal -lechttp -lssl -lcrypto -lrt
 
 kasacmd: kasacmd.c
 	gcc -Os -o kasacmd kasacmd.c
