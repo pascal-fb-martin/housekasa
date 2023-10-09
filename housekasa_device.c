@@ -461,7 +461,8 @@ const char *housekasa_device_refresh (void) {
     }
 
     devices = houseconfig_array (0, ".kasa.net");
-    if (devices < 0) return "cannot find network array";
+    if (devices < 0) return 0; // Let's make this array optional.
+
     requested = houseconfig_array_length (devices);
     if (echttp_isdebug()) fprintf (stderr, "found %d networks\n", requested);
     if (requested >= KASASENSEMAX) requested = KASASENSEMAX - 1;
