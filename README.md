@@ -190,3 +190,31 @@ HouseKasa uses the response only as a prompt for sending a state request ("syste
 
 HouseKasa will query the state of each known device periodically (unicast UDP packet) to verify that the device is still present and to maintain its state current (the device could be controlled by others).
 
+## Command line tool
+
+This software provides a tool named `kasa` to test controls of device:
+
+kasa
+
+Query the status of all devices present. This is a way to do some manual discovery.
+
+kasa *host*
+
+Query the status of the specified device.
+
+kasa *host* alias *name*
+
+Set the alias name for this device. This alias name is stored in the device.
+
+kasa *host* on|off [hs220]
+
+Set the device on or off. The hs220 option makes the tool use the alternative syntax accepted by the HS220 devices.
+
+kasa *host* on|off kp400 *n*
+
+Set an outlet on or off on a KP400 device. The KP400 has multiple outlets that can be controled independently, which is why the outlet number must be specified.
+
+kasa -h|--help|help
+
+SHow the tool's help.
+

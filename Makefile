@@ -26,10 +26,10 @@ SHARE=$(HROOT)/share/house
 OBJS= housekasa_device.o housekasa.o
 LIBOJS=
 
-all: housekasa kasacmd
+all: housekasa kasa
 
 clean:
-	rm -f *.o *.a housekasa kasacmd
+	rm -f *.o *.a housekasa kasa
 
 rebuild: clean all
 
@@ -39,8 +39,8 @@ rebuild: clean all
 housekasa: $(OBJS)
 	gcc -Os -o housekasa $(OBJS) -lhouseportal -lechttp -lssl -lcrypto -lrt
 
-kasacmd: kasacmd.c
-	gcc -Os -o kasacmd kasacmd.c
+kasa: kasa.c
+	gcc -Os -o kasa kasa.c
 
 # Distribution agnostic file installation -----------------------
 
@@ -49,9 +49,9 @@ install-app:
 	mkdir -p /var/lib/house
 	mkdir -p /etc/house
 	rm -f $(HROOT)/bin/housekasa
-	cp housekasa kasacmd $(HROOT)/bin
-	chown root:root $(HROOT)/bin/housekasa $(HROOT)/bin/kasacmd
-	chmod 755 $(HROOT)/bin/housekasa $(HROOT)/bin/kasacmd
+	cp housekasa kasa $(HROOT)/bin
+	chown root:root $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
+	chmod 755 $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
 	mkdir -p $(SHARE)/public/kasa
 	chmod 755 $(SHARE) $(SHARE)/public $(SHARE)/public/kasa
 	cp public/* $(SHARE)/public/kasa
@@ -60,7 +60,7 @@ install-app:
 	touch /etc/default/housekasa
 
 uninstall-app:
-	rm -f $(HROOT)/bin/housekasa $(HROOT)/bin/kasacmd
+	rm -f $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
 	rm -rf $(SHARE)/public/kasa
 
 purge-app:

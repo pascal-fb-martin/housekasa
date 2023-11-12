@@ -1,4 +1,4 @@
-/* kasacmd - A simple program to control a TP-Link Kasa device
+/* kasa - A simple program to control a TP-Link Kasa device
  *
  * Copyright 2020, Pascal Martin
  *
@@ -18,15 +18,15 @@
  * Boston, MA  02110-1301, USA.
  *
  *
- * kasacmd.c - control a TP-Link Kasa device
+ * kasa.c - control a TP-Link Kasa device
  *
  * SYNOPSYS:
  *
- * kasacmd
- * kasacmd <host>
- * kasacmd <host> alias <name>
- * kasacmd <host> on [<model> [<outlet>]]
- * kasacmd <host> off [<model> [<outlet>]]
+ * kasa
+ * kasa <host>
+ * kasa <host> alias <name>
+ * kasa <host> on [<model> [<outlet>]]
+ * kasa <host> off [<model> [<outlet>]]
  *
  * Supported commands are: 
  *    alias: change the alias name configured in the device.
@@ -66,7 +66,7 @@ static int KasaPort = 9999;
 static int KasaSocket = -1;
 static struct sockaddr_in KasaAddress;
 
-static void kasacmd_socket (void) {
+static void kasa_socket (void) {
 
     KasaAddress.sin_family = AF_INET;
     KasaAddress.sin_port = htons(KasaPort);
@@ -103,7 +103,7 @@ static char bin2hex (unsigned char d) {
     return '0';
 }
 
-static void kasacmd_send (const char *data) {
+static void kasa_send (const char *data) {
 
     char encoded[1024];
     int i;
@@ -128,7 +128,7 @@ static void kasacmd_send (const char *data) {
     }
 }
 
-static int kasacmd_wait (void) {
+static int kasa_wait (void) {
 
     fd_set receive;
     struct timeval timeout;
@@ -142,7 +142,7 @@ static int kasacmd_wait (void) {
     return select (KasaSocket+1, &receive, 0, 0, &timeout);
 }
 
-static void kasacmd_receive (void) {
+static void kasa_receive (void) {
 
     char encoded[1024];
     char data[1025];
@@ -170,7 +170,7 @@ static void kasacmd_receive (void) {
             data);
 }
 
-static int kasacmd_resolve (const char *host) {
+static int kasa_resolve (const char *host) {
 
     int result = 0;
     struct addrinfo hints;
@@ -191,6 +191,18 @@ static int kasacmd_resolve (const char *host) {
     return result;
 }
 
+static void kasa_help (int status) {
+    printf ("kasa:                         query the status of all devices\n");
+    printf ("kasa <host>:                  query the status of the specified device\n");
+    printf ("kasa <host> alias <name>:     set an alias for the specified device\n");
+    printf ("kasa <host> on [hs220]:       turn the specified device on\n");
+    printf ("kasa <host> off [hs220]:      turn the specified device off\n");
+    printf ("kasa <host> on [kp400 <id>]:  turn the specified subdevice on\n");
+    printf ("kasa <host> off [kp400 <id>]: turn the specified subdevice off\n");
+    printf ("kasa -h|--help|help:          show this help text\n");
+    exit (status);
+}
+
 int main (int argc, char **argv) {
 
     const char *host = 0;
@@ -201,6 +213,9 @@ int main (int argc, char **argv) {
     char buffer[256];
 
     if (argc >= 2) {
+       if (!strcmp(argv[1], "-h")) kasa_help (0);
+       if (!strcmp(argv[1], "--help")) kasa_help (0);
+       if (!strcmp(argv[1], "help")) kasa_help (0);
        host = argv[1];
        if (argc >= 3) {
            cmd = argv[2];
@@ -213,27 +228,27 @@ int main (int argc, char **argv) {
        }
     }
     
-    kasacmd_socket ();
+    kasa_socket ();
     if (host) {
-        if (!kasacmd_resolve (host)) {
+        if (!kasa_resolve (host)) {
             printf ("Cannot resolve %s\n", host);
-            exit(1);
+            kasa_help(1);
         }
     }
 
     if (!cmd) {
-        kasacmd_send ("{\"system\":{\"get_sysinfo\":{}}}");
+        kasa_send ("{\"system\":{\"get_sysinfo\":{}}}");
     } else if (!strcmp (cmd, "alias")) {
         if (model) {
             char buffer[200];
             snprintf (buffer, sizeof(buffer),
                       "{\"system\":{\"set_dev_alias\":{\"alias\":\"%s\"}}}",
                       model);
-            kasacmd_send (buffer);
+            kasa_send (buffer);
         }
     } else if (!strcmp (cmd, "on")) {
         if (!model) {
-            kasacmd_send ("{\"system\":{\"set_relay_state\":{\"state\":1}}}");
+            kasa_send ("{\"system\":{\"set_relay_state\":{\"state\":1}}}");
         } else if (!strcmp (model, "kp400")) {
             if (!id) {
                 printf ("Outlet ID is required\n");
@@ -242,13 +257,13 @@ int main (int argc, char **argv) {
             char buffer[200];
             snprintf (buffer, sizeof(buffer),
                       "{\"context\":{\"child_ids\":[\"%s\"]},\"system\":{\"set_relay_state\":{\"state\":1}}}", id);
-            kasacmd_send (buffer);
+            kasa_send (buffer);
         } else if (!strcmp (model, "hs220")) {
-            kasacmd_send ("{\"smartlife.iot.dimmer\":{\"set_switch_state\":{\"state\":1}}}");
+            kasa_send ("{\"smartlife.iot.dimmer\":{\"set_switch_state\":{\"state\":1}}}");
         }
     } else if (!strcmp (cmd, "off")) {
         if (!model) {
-            kasacmd_send ("{\"system\":{\"set_relay_state\":{\"state\":0}}}");
+            kasa_send ("{\"system\":{\"set_relay_state\":{\"state\":0}}}");
         } else if (!strcmp (model, "kp400")) {
             if (!id) {
                 printf ("Outlet ID is required\n");
@@ -257,12 +272,15 @@ int main (int argc, char **argv) {
             char buffer[200];
             snprintf (buffer, sizeof(buffer),
                       "{\"context\":{\"child_ids\":[\"%s\"]},\"system\":{\"set_relay_state\":{\"state\":0}}}", id);
-            kasacmd_send (buffer);
+            kasa_send (buffer);
         } else if (!strcmp (model, "hs220")) {
-            kasacmd_send ("{\"smartlife.iot.dimmer\":{\"set_switch_state\":{\"state\":0}}}");
+            kasa_send ("{\"smartlife.iot.dimmer\":{\"set_switch_state\":{\"state\":0}}}");
         }
+    } else {
+        printf ("Invalid command %s\n", cmd);
+        kasa_help(1);
     }
-    while (kasacmd_wait() > 0) kasacmd_receive();
+    while (kasa_wait() > 0) kasa_receive();
     return 0;
 }
 
