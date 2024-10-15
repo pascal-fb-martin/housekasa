@@ -419,7 +419,7 @@ const char *housekasa_device_refresh (void) {
     }
     DevicesCount = 0;
 
-    if (houseconfig_size() <= 0) return 0;
+    if (!houseconfig_active()) return 0;
 
     devices = houseconfig_array (0, ".kasa.devices");
     if (devices < 0) return "cannot find devices array";
