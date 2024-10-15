@@ -197,7 +197,6 @@ static void housekasa_background (int fd, int mode) {
 static void housekasa_config_listener (const char *name, time_t timestamp,
                                        const char *data, int length) {
     houselog_event ("SYSTEM", "CONFIG", "LOAD", "FROM DEPOT %s", name);
-    const char *error = houseconfig_update (data);
     if (!houseconfig_update (data)) housekasa_device_refresh();
 }
 
