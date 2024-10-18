@@ -1,6 +1,9 @@
 #!/bin/sh
 OPTS=
+HTTPOPTS=
+HOUSEOPTS=
+OTHEROPTS=
 if [ -e /etc/default/housekasa ] ; then . /etc/default/housekasa ; fi
 sv start houseportal || exit 1
-exec /usr/local/bin/housekasa $OPTS
+exec /usr/local/bin/housekasa $HTTPOPTS $HOUSEOPTS $OTHEROPTS $OPTS
 
