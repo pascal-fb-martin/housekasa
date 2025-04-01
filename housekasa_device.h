@@ -36,7 +36,8 @@ const char *housekasa_device_failure (int point);
 int    housekasa_device_commanded (int point);
 time_t housekasa_device_deadline  (int point);
 int    housekasa_device_get       (int point);
-int    housekasa_device_set       (int point, int state, int pulse);
+int    housekasa_device_set       (int point, int state,
+                                   int pulse, const char *cause);
 
 void housekasa_device_periodic (time_t now);
 

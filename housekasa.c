@@ -98,6 +98,7 @@ static const char *housekasa_set (const char *method, const char *uri,
     const char *point = echttp_parameter_get("point");
     const char *statep = echttp_parameter_get("state");
     const char *pulsep = echttp_parameter_get("pulse");
+    const char *cause = echttp_parameter_get("cause");
     int state;
     int pulse;
     int i;
@@ -131,7 +132,7 @@ static const char *housekasa_set (const char *method, const char *uri,
        if ((strcmp (point, "all") == 0) ||
            (strcmp (point, housekasa_device_name(i)) == 0)) {
            found = 1;
-           housekasa_device_set (i, state, pulse);
+           housekasa_device_set (i, state, pulse, cause);
        }
     }
 
