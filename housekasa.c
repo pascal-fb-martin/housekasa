@@ -73,6 +73,7 @@ static const char *housekasa_status (const char *method, const char *uri,
         time_t pulsed = housekasa_device_deadline(i);
         const char *name = housekasa_device_name(i);
         const char *status = housekasa_device_failure(i);
+        int priority = housekasa_device_priority(i);
         if (!status) status = housekasa_device_get(i)?"on":"off";
         const char *commanded = housekasa_device_commanded(i)?"on":"off";
 
@@ -81,6 +82,8 @@ static const char *housekasa_status (const char *method, const char *uri,
         echttp_json_add_string (context, point, "command", commanded);
         if (pulsed)
             echttp_json_add_integer (context, point, "pulse", (int)pulsed);
+        if (priority)
+            echttp_json_add_bool (context, point, "priority", priority);
         echttp_json_add_string (context, point, "gear", "light");
     }
     const char *error = echttp_json_export (context, buffer, 65537);

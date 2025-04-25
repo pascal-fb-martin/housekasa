@@ -54,15 +54,16 @@
  *
  * int    housekasa_device_commanded (int point);
  * time_t housekasa_device_deadline (int point);
+ * int    housekasa_device_priority (int point);
  *
- *    Return the last commanded state, or the command deadline, for
+ *    Return the last commanded state, deadline or priority for
  *    the specified kasa device.
  *
  * int housekasa_device_get (int point);
  *
  *    Get the actual state of the device.
  *
- * int housekasa_device_set (int point, int state,
+ * void housekasa_device_set (int point, int state,
  *                           int pulse, const char *cause);
  *
  *    Set the specified point to the on (1) or off (0) state for the pulse
@@ -117,8 +118,9 @@ struct DeviceMap {
     time_t detected;
     int status;
     int commanded;
-    time_t pending;
-    time_t deadline;
+    int priority;
+    time_t pending;  // Deadline for retrying the latest control.
+    time_t deadline; // When the device will timeout and be turned off.
     time_t last_sense;
 };
 
@@ -166,6 +168,11 @@ int housekasa_device_commanded (int point) {
 time_t housekasa_device_deadline (int point) {
     if (point < 0 || point > DevicesCount) return 0;
     return Devices[point].deadline;
+}
+
+int housekasa_device_priority (int point) {
+    if (point < 0 || point > DevicesCount) return 0;
+    return Devices[point].priority;
 }
 
 const char *housekasa_device_failure (int point) {
@@ -271,18 +278,43 @@ static void housekasa_device_control (int device, int state) {
     housekasa_device_send (&(Devices[device].ipaddress), buffer);
 }
 
-int housekasa_device_set (int device, int state,
-                          int pulse, const char *cause) {
+void housekasa_device_set (int device, int state,
+                           int pulse, const char *cause) {
+
+    if (device < 0 || device > DevicesCount) return;
 
     const char *namedstate = state?"on":"off";
     time_t now = time(0);
+
+    // Manual controls have higher priority than others (schedule or event
+    // based controls). The goal is to prevent an automatic control from
+    // overriding a human action. Humans come first.
+    // So:
+    // - If the device is requested on, record the priority of the request.
+    //   (The priority of a request cannot be lowered by a subsequent request,
+    //   so the priority only goes up in this case.)
+    // - If the device is requested off, ignore a lower priority request,
+    //   otherwise reset the device priority.
+    //
+    int priority;
+    if (!cause)
+        priority = 1; // In case of doubt, assume manual.
+    else
+        priority = strstr(cause, "MANUAL")?1:0;
+
+    if (!state) {
+        if (priority < Devices[device].priority) return;
+        Devices[device].priority = 0; // No priority when the device is off.
+    } else {
+        if (priority > Devices[device].priority)
+            Devices[device].priority = priority;
+    }
 
     char comment[256];
     if (cause)
         snprintf (comment, sizeof(comment), " (%s)", cause);
     else
         comment[0] = 0;
-    if (device < 0 || device > DevicesCount) return 0;
 
     if (echttp_isdebug()) {
         if (pulse) fprintf (stderr, "set %s to %s at %ld (pulse %ds)%s\n", Devices[device].name, namedstate, now, pulse, comment);
@@ -290,9 +322,13 @@ int housekasa_device_set (int device, int state,
     }
 
     if (pulse > 0) {
-        Devices[device].deadline = now + pulse;
-        houselog_event ("DEVICE", Devices[device].name, "SET",
-                        "%s FOR %d SECONDS%s", namedstate, pulse, comment);
+        // A new pulse can only extend a reset deadline, not shorten it.
+        time_t deadline = now + pulse;
+        if (deadline > Devices[device].deadline) {
+            Devices[device].deadline = deadline;
+            houselog_event ("DEVICE", Devices[device].name, "SET",
+                            "%s FOR %d SECONDS%s", namedstate, pulse, comment);
+        }
     } else {
         Devices[device].deadline = 0;
         houselog_event ("DEVICE", Devices[device].name, "SET",
@@ -311,6 +347,7 @@ int housekasa_device_set (int device, int state,
 static void housekasa_device_reset (int i, int status) {
     Devices[i].commanded = Devices[i].status = status;
     Devices[i].pending = Devices[i].deadline = 0;
+    Devices[i].priority = 0;
 }
 
 void housekasa_device_periodic (time_t now) {
@@ -350,6 +387,7 @@ void housekasa_device_periodic (time_t now) {
             Devices[i].commanded = 0;
             Devices[i].pending = now + 5;
             Devices[i].deadline = 0;
+            Devices[i].priority = 0; // Done with any request.
         }
         if (Devices[i].status != Devices[i].commanded) {
             if (Devices[i].pending > now) {
@@ -423,6 +461,7 @@ const char *housekasa_device_refresh (void) {
     for (i = 0; i < DevicesCount; ++i) {
         Devices[i].detected = 0;
         Devices[i].deadline = 0;
+        Devices[i].priority = 0;
         Devices[i].pending = 0;
     }
     DevicesCount = 0;
@@ -565,6 +604,7 @@ static void housekasa_device_status_update (int device, int status) {
             // Device commanded by someone else.
             Devices[device].commanded = status;
             Devices[device].pending = 0;
+            Devices[device].priority = 1; // Overcome by (external) event.
         }
         Devices[device].status = status;
     }

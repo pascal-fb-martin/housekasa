@@ -10,9 +10,9 @@ function kasaShowStatus (response) {
     document.getElementsByTagName('title')[0].innerHTML =
         response.host+' - Kasa Devices';
 
-    var state = response.control.status;
-    for (const [key, value] of Object.entries(state)) {
+    for (const [key, value] of Object.entries(response.control.status)) {
         var state = document.getElementById ('state-'+key);
+        var prio = document.getElementById ('priority-'+key);
         var button = document.getElementById ('button-'+key);
         if (value.state == 'on') {
             state.innerHTML = 'ON';
@@ -29,6 +29,10 @@ function kasaShowStatus (response) {
             button.innerHTML = 'ON';
             button.disabled = true;
         }
+        if (value.priority)
+            prio.innerHTML = 'HIGH';
+        else
+            prio.innerHTML = '';
     }
 }
 
@@ -73,6 +77,13 @@ function kasaShowConfig (response) {
         label = document.createElement("span");
         label.innerHTML = '(wait)';
         label.id = 'state-'+device.name;
+        inner.appendChild(label);
+        outer.appendChild(inner);
+
+        inner = document.createElement("td");
+        label = document.createElement("span");
+        label.innerHTML = '(wait)';
+        label.id = 'priority-'+device.name;
         inner.appendChild(label);
         outer.appendChild(inner);
 
@@ -154,8 +165,9 @@ window.onload = function() {
    <table class="housewidetable iolist" border="0">
       <tr>
          <th width="14%">NAME</th>
-         <th width="10%">STATE</th>
-         <th width="10%">CONTROL</th>
+         <th width="7%">STATE</th>
+         <th width="6%">PRIORITY</th>
+         <th width="7%">CONTROL</th>
          <th width="10%">MODEL</th>
          <th width="14%">IP</th>
          <th width="42%">DESCRIPTION</th>
