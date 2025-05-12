@@ -304,7 +304,7 @@ void housekasa_device_set (int device, int state,
 
     if (!state) {
         if (priority < Devices[device].priority) return;
-        Devices[device].priority = 0; // No priority when the device is off.
+        Devices[device].priority = 0; // Low priority when the device is off.
     } else {
         if (priority > Devices[device].priority)
             Devices[device].priority = priority;
@@ -604,7 +604,10 @@ static void housekasa_device_status_update (int device, int status) {
             // Device commanded by someone else.
             Devices[device].commanded = status;
             Devices[device].pending = 0;
-            Devices[device].priority = 1; // Overcome by (external) event.
+            if (status)
+                Devices[device].priority = 1; // Overcome by (external) event.
+            else
+                Devices[device].priority = 0; // Low priority when off.
         }
         Devices[device].status = status;
     }
