@@ -47,8 +47,6 @@
 
 #include "housekasa_device.h"
 
-static int use_houseportal = 0;
-
 static const char *housekasa_status (const char *method, const char *uri,
                                     const char *data, int length) {
     static char buffer[65537];
@@ -171,19 +169,9 @@ static const char *housekasa_config (const char *method, const char *uri,
 
 static void housekasa_background (int fd, int mode) {
 
-    static time_t LastRenewal = 0;
     time_t now = time(0);
 
-    if (use_houseportal) {
-        static const char *path[] = {"control:/kasa"};
-        if (now >= LastRenewal + 60) {
-            if (LastRenewal > 0)
-                houseportal_renew();
-            else
-                houseportal_register (echttp_port(4), path, 1);
-            LastRenewal = now;
-        }
-    }
+    houseportal_background (now);
     housekasa_device_periodic(now);
     if (housekasa_device_changed()) {
         static char buffer[65537];
@@ -225,8 +213,9 @@ int main (int argc, const char **argv) {
 
     argc = echttp_open (argc, argv);
     if (echttp_dynamic_port()) {
+        static const char *path[] = {"control:/kasa"};
         houseportal_initialize (argc, argv);
-        use_houseportal = 1;
+        houseportal_declare (echttp_port(4), path, 1);
     }
     housediscover_initialize (argc, argv);
     houselog_initialize ("kasa", argc, argv);
