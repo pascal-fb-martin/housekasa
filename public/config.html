@@ -157,10 +157,8 @@ function kasaConfig () {
 }
 
 function kasaShowStatus (response) {
-    document.getElementById('portal').href =
-        'http://'+response.proxy+'/index.html';
     document.getElementsByTagName('title')[0].innerHTML =
-        response.host+' - Kasa Devices';
+        response.host+' - Kasa Config';
 }
 
 function kasaStatus () {

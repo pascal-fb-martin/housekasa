@@ -5,10 +5,8 @@
 <script>
 function kasaShowStatus (response) {
 
-    document.getElementById('portal').href = 'http://'+response.proxy+'/index.html';
-
     document.getElementsByTagName('title')[0].innerHTML =
-        response.host+' - Kasa Config';
+        response.host+' - Kasa Devices';
 
     for (const [key, value] of Object.entries(response.control.status)) {
         var state = document.getElementById ('state-'+key);
