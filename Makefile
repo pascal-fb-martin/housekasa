@@ -44,19 +44,21 @@ kasa: kasa.c
 
 # Distribution agnostic file installation -----------------------
 
-install-app:
-	mkdir -p $(HROOT)/bin
-	mkdir -p /var/lib/house
-	mkdir -p /etc/house
-	rm -f $(HROOT)/bin/housekasa
-	cp housekasa kasa $(HROOT)/bin
-	chown root:root $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
-	chmod 755 $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
+install-ui:
 	mkdir -p $(SHARE)/public/kasa
 	chmod 755 $(SHARE) $(SHARE)/public $(SHARE)/public/kasa
 	cp public/* $(SHARE)/public/kasa
 	chown root:root $(SHARE)/public/kasa/*
 	chmod 644 $(SHARE)/public/kasa/*
+
+install-app: install-ui
+	mkdir -p $(HROOT)/bin
+	mkdir -p /var/lib/house
+	mkdir -p /etc/house
+	rm -f $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
+	cp housekasa kasa $(HROOT)/bin
+	chown root:root $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
+	chmod 755 $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
 	touch /etc/default/housekasa
 
 uninstall-app:
