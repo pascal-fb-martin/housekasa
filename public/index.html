@@ -8,7 +8,7 @@ function kasaShowStatus (response) {
     document.getElementById('portal').href = 'http://'+response.proxy+'/index.html';
 
     document.getElementsByTagName('title')[0].innerHTML =
-        response.host+' - Kasa Devices';
+        response.host+' - Kasa Config';
 
     for (const [key, value] of Object.entries(response.control.status)) {
         var state = document.getElementById ('state-'+key);
@@ -154,8 +154,7 @@ window.onload = function() {
    <tr><td>
    <table class="housetop">
    <tr>
-   <td><a id="portal" href="/index.html">Portal</a></td>
-   <td><span>Kasa</span></td>
+   <td><span>Devices</span></td>
    <td><a href="/kasa/events.html">Events</a></td>
    <td><a href="/kasa/config.html">Config</a></td>
    </tr>
