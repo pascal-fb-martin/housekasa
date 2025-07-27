@@ -10,6 +10,7 @@ See the [gallery](https://github.com/pascal-fb-martin/housekasa/blob/main/galler
 This service is not really meant to be accessed directly by end-users: these should use [houselights](https://github.com/pascal-fb-martin/houselights) to control Kasa devices.
 
 So far HouseKasa has been tested with the following US models:
+
 * HS220
 * HS200
 * KP400
