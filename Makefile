@@ -1,6 +1,6 @@
 # HouseKasa - A simple home web server for control of TP-Link Kasa devices.
 #
-# Copyright 2023, Pascal Martin
+# Copyright 2025, Pascal Martin
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -16,10 +16,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
+#
+# WARNING
+#
+# This Makefile depends on echttp and houseportal (dev) being installed.
+
+prefix=/usr/local
+SHARE=$(prefix)/share/house
+
+INSTALL=/usr/bin/install
 
 HAPP=housekasa
-HROOT=/usr/local
-SHARE=$(HROOT)/share/house
 
 # Application build. --------------------------------------------
 
@@ -44,31 +51,22 @@ kasa: kasa.c
 
 # Distribution agnostic file installation -----------------------
 
-install-ui:
-	mkdir -p $(SHARE)/public/kasa
-	chmod 755 $(SHARE) $(SHARE)/public $(SHARE)/public/kasa
-	cp public/* $(SHARE)/public/kasa
-	chown root:root $(SHARE)/public/kasa/*
-	chmod 644 $(SHARE)/public/kasa/*
+install-ui: install-preamble
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(SHARE)/public/kasa
+	$(INSTALL) -m 0644 public/* $(DESTDIR)$(SHARE)/public/kasa
 
 install-app: install-ui
-	mkdir -p $(HROOT)/bin
-	mkdir -p /var/lib/house
-	mkdir -p /etc/house
-	rm -f $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
-	cp housekasa kasa $(HROOT)/bin
-	chown root:root $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
-	chmod 755 $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
-	touch /etc/default/housekasa
+	$(INSTALL) -m 0755 -s housekasa kasa $(DESTDIR)$(prefix)/bin
+	touch $(DESTDIR)/etc/default/housekasa
 
 uninstall-app:
-	rm -f $(HROOT)/bin/housekasa $(HROOT)/bin/kasa
-	rm -rf $(SHARE)/public/kasa
+	rm -f $(DESTDIR)$(prefix)/bin/housekasa $(DESTDIR)$(prefix)/bin/kasa
+	rm -rf $(DESTDIR)$(SHARE)/public/kasa
 
 purge-app:
 
 purge-config:
-	rm -rf /etc/house/kasa.config /etc/default/housekasa
+	rm -rf $(DESTDIR)/etc/house/kasa.config $(DESTDIR)/etc/default/housekasa
 
 # System installation. ------------------------------------------
 
