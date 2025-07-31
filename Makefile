@@ -44,7 +44,7 @@ rebuild: clean all
 	gcc -c -Os -o $@ $<
 
 housekasa: $(OBJS)
-	gcc -Os -o housekasa $(OBJS) -lhouseportal -lechttp -lssl -lcrypto -lrt
+	gcc -Os -o housekasa $(OBJS) -lhouseportal -lechttp -lssl -lcrypto -lmagic -lrt
 
 kasa: kasa.c
 	gcc -Os -o kasa kasa.c
