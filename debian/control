@@ -1,0 +1,15 @@
+Source: housekasa
+Version: 1.0
+Section: Web servers
+Maintainer: Pascal Martin <pascal.fb.martin@gmail.com>
+Priority: optional
+Homepage: https://github.com/pascal-fb-martin/housekasa
+Standard-Version: 4.7.0
+Package: housekasa
+Architecture: {{arch}}
+Depends: 
+Description: A House service to collect and report OS metrics.
+ HouseKasa is part of the House suite of web services.
+ .
+ HouseKasa controls TP-Link Kasa WiFi switches and bulbs.
+

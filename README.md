@@ -194,28 +194,45 @@ HouseKasa will query the state of each known device periodically (unicast UDP pa
 ## Command line tool
 
 This software provides a tool named `kasa` to test controls of device:
-
+```
 kasa
-
+```
 Query the status of all devices present. This is a way to do some manual discovery.
-
+```
 kasa *host*
-
+```
 Query the status of the specified device.
-
+```
 kasa *host* alias *name*
+```
 
 Set the alias name for this device. This alias name is stored in the device.
-
+```
 kasa *host* on|off [hs220]
-
+```
 Set the device on or off. The hs220 option makes the tool use the alternative syntax accepted by the HS220 devices.
-
+```
 kasa *host* on|off kp400 *n*
-
+```
 Set an outlet on or off on a KP400 device. The KP400 has multiple outlets that can be controled independently, which is why the outlet number must be specified.
-
+```
 kasa -h|--help|help
+```
+Show the tool's help.
 
-SHow the tool's help.
+## Debian Packaging
+
+The provided Makefile supports building private Debian packages. These are _not_ official packages:
+
+- They do not follow all Debian policies.
+
+- They are not built using Debian standard conventions and tools.
+
+- The packaging is not separate from the upstream sources, and there is
+  no source package.
+
+To build a Debian package, use the `debian-package` target:
+```
+make debian-package
+```
 
