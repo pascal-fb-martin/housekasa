@@ -27,8 +27,7 @@ SHARE=$(prefix)/share/house
 INSTALL=/usr/bin/install
 
 HAPP=housekasa
-HMAN=/var/lib/house/note/content/manuals/automation
-HMANCACHE=/var/lib/house/note/cache
+HCAT=automation
 
 # Application build. --------------------------------------------
 
@@ -56,9 +55,6 @@ kasa: kasa.c
 install-ui: install-preamble
 	$(INSTALL) -m 0755 -d $(DESTDIR)$(SHARE)/public/kasa
 	$(INSTALL) -m 0644 public/* $(DESTDIR)$(SHARE)/public/kasa
-	$(INSTALL) -m 0755 -d $(DESTDIR)$(HMAN)
-	$(INSTALL) -m 0644 README.md $(DESTDIR)$(HMAN)/$(HAPP).md
-	rm -rf $(DESTDIR)$(HMANCACHE)/*
 
 install-runtime: install-preamble
 	$(INSTALL) -m 0755 -s housekasa kasa $(DESTDIR)$(prefix)/bin
@@ -69,8 +65,6 @@ install-app: install-ui install-runtime
 uninstall-app:
 	rm -f $(DESTDIR)$(prefix)/bin/housekasa $(DESTDIR)$(prefix)/bin/kasa
 	rm -rf $(DESTDIR)$(SHARE)/public/kasa
-	rm -f $(DESTDIR)$(HMAN)/$(HAPP).md
-	rm -rf $(DESTDIR)$(HMANCACHE)/*
 
 purge-app:
 

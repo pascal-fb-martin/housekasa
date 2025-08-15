@@ -1,10 +1,10 @@
-housekasa (1.1) UNREALEASED; urgency=low
+housekasa (1.1) UNRELEASED; urgency=low
 
    * Install README.md as an online manual.
 
  -- Pascal Martin <pascal.fb.martin@gmail.com>  Wed, 15 Aug 2025 12:00:00 PDT
 
-housekasa (1.0) UNREALEASED; urgency=low
+housekasa (1.0) UNRELEASED; urgency=low
 
    * Initial release as a Debian package.
 
