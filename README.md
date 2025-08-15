@@ -1,4 +1,5 @@
 # HouseKasa
+
 A House web service to control TP-Link Kasa devices (lights, plugs..)
 
 ## Overview
@@ -29,8 +30,10 @@ So far HouseKasa has been tested with the following US models:
 Otherwise installing [houselights](https://github.com/pascal-fb-martin/houselights) is recommended, but not necessarily on the same computer.
 
 ## Configuration
+
 The preferred method is to configure the devices from the Configure web page.
 The configuration is stored in file /etc/house/kasa.json. A typical example of configuration is:
+
 ```
 {
     "kasa" : {
@@ -49,7 +52,9 @@ The configuration is stored in file /etc/house/kasa.json. A typical example of c
     }
 }
 ```
+
 ## Device Setup
+
 Each device must be setup using the Kasa phone app. The protocol for setting up devices has not been reverse engineered at that time.
 
 ## Kasa Protocol
@@ -73,6 +78,7 @@ TCP-based commands are prefixed with a big-endian 4 bytes integer, which represe
 #### HS220
 
 The example bellow shows the discovery of a HS220 (US model), using UDP:
+
 ```
 > {"system":{"get_sysinfo":{}}}
 < {"system":{"get_sysinfo":{"sw_ver":"1.5.11 Build 200214 Rel.152651",
@@ -88,20 +94,24 @@ The example bellow shows the discovery of a HS220 (US model), using UDP:
   "preferred_state":[{"index":0,"brightness":100},{"index":1,"brightness":75},{"index":2,"brightness":50},{"index":3,"brightness":25}],
   "next_action":{"type":-1},"err_code":0}}}
 ```
+
 In the example above, the system.get_sysinfo command returns a long structure that indicates the model of the device (system.get_sysinfo.model) and its device ID (system.get_sysinfo.deviceID.
 
 This device is a single dimmer, and the state is directly part of the system.get_sysinfo structure (e.g. system.get_sysinfo.relay_state). It has four preferred levels (in array system.get_sysinfo.preferred_state: 100%, 75%, 50% and 25%). These preferred levels are shown on the phone app as shortcuts in the dimmer control screen.
 
 The device can be turned on and of, without changing the dimmer level:
+
 ```
 > {"context":{"source":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"},"smartlife.iot.dimmer":{"set_switch_state":{"state":0}}}
 < {"smartlife.iot.dimmer":{"set_switch_state":{"err_code":0}}}
 ```
+
 The "smartlife.iot.dimmer.set_switch_state.state" item controls if the light is on (1) or off (0).
 
 The context structure is optional. 
 
 The brightness level is also controllable:
+
 ```
 > {"context":{"source":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"},
   "smartlife.iot.dimmer":{"set_brightness":{"brightness":75},
@@ -109,6 +119,7 @@ The brightness level is also controllable:
 < {"smartlife.iot.dimmer":{"set_brightness":{"err_code":0},
   "set_switch_state":{"err_code":0}}}
 ```
+
 That command actually achieves two results: it both sets the dimmer level ("smartlife.iot.dimmer.set_brightness.brightness") and turns the light on ("smartlife.iot.dimmer.set_switch_state.state"). I guess the brightness level has little immediate effect when the light is turned off anyway.
 
 (HouseKasa does not support controlling the dimmer level at this time.)
@@ -116,6 +127,7 @@ That command actually achieves two results: it both sets the dimmer level ("smar
 #### KP400
 
 The example below shows the discovery of a KP400 (US model), using UDP:
+
 ```
 > {"system":{"get_sysinfo":{}}}
 < {"system":{"get_sysinfo":{"sw_ver":"1.0.6 Build 200821 Rel.090909",
@@ -129,6 +141,7 @@ The example below shows the discovery of a KP400 (US model), using UDP:
   "children":[{"id":"00","state":1,"alias":"Kasa_Smart Plug_BC6F_0","on_time":20,"next_action":{"type":-1}},{"id":"01","state":1,"alias":"Kasa_Smart Plug_BC6F_1","on_time":20,"next_action":{"type":-1}}],
   "child_num":2,"ntc_state":0,"err_code":0}}}
 ```
+
 The JSON returned is similar, but not all the same items are present (probably due to the different firmware version).
 
 This device actually control two outlets independently, which is described in array "system.get_sysinfo.children". Note that each outlet has a two-character ID (00 and 01).
@@ -136,12 +149,14 @@ This device actually control two outlets independently, which is described in ar
 Note the "system.get_sysinfo.deviceID" value: this will be important later, when controlling each outlet.
 
 Each outlet can be controlled independently by providing an identifier for that outlet. The outlet ID is the concatenation of the deviceID and outlet ID:
+
 ```
 > {"context":{"child_ids":["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx042E00"],
   "source":"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"},
   "system":{"set_relay_state":{"state":1}}}
 < {"system":{"set_relay_state":{"err_code":0}}}
 ```
+
 The array context.child_ids indicates which outlet(s) should be controlled. Apparently the protocol allows controlling multiple outlets in one command. The "system.set_relay_state.state" value indicates if the outlet should be turned off (0) or on (1).
 
 The source item is optional. The context struct is mandatory (at least if one wants to control a subset of the outlets).
@@ -149,6 +164,7 @@ The source item is optional. The context struct is mandatory (at least if one wa
 #### Alias
 
 Each device or outlet can be assigned an alias, which is a way for the user to give a name to each:
+
 ```
 > {"system":{"set_dev_alias":{"alias":"xxxxxxx"}}}
 < {"system":{"set_dev_alias":{"err_code":0}}}
@@ -167,7 +183,9 @@ Discovery of which devices are present on the network is made on a periodic basi
 ```
 {"system":{"get_sysinfo":{}}}
 ```
+
 HouseKasa searches for the following items in the response:
+
 ```
 system.get_sysinfo.model
 system.get_sysinfo.alias (if not set in HouseKasa)
@@ -183,6 +201,7 @@ If the array "system.get_sysinfo.children" is present, its state and alias eleme
 The state of every known device is maintained by doing an unicast system.get_sysinfo request every 10 seconds, except after issuing a command, in which case the request is made at higher frequency for a minute, or else until the requested state was reached.
 
 The Kasa devices (KP400 and HS220) all accept the "system.set_relay_state" command. However since the KP400 has two outlets, the exact outlet targetted must be specified using "context.child_ids". It happens that the HS220 also accept the presence of an outlet ID: it just ignores it. So the command sent for on and off is:
+
 ```
 {"context":{"child_ids":["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]},"system":{"set_relay_state":{"state":x}}}
 ```
@@ -194,30 +213,41 @@ HouseKasa will query the state of each known device periodically (unicast UDP pa
 ## Command line tool
 
 This software provides a tool named `kasa` to test controls of device:
+
 ```
 kasa
 ```
+
 Query the status of all devices present. This is a way to do some manual discovery.
+
 ```
 kasa *host*
 ```
+
 Query the status of the specified device.
+
 ```
 kasa *host* alias *name*
 ```
 
 Set the alias name for this device. This alias name is stored in the device.
+
 ```
 kasa *host* on|off [hs220]
 ```
+
 Set the device on or off. The hs220 option makes the tool use the alternative syntax accepted by the HS220 devices.
+
 ```
 kasa *host* on|off kp400 *n*
 ```
+
 Set an outlet on or off on a KP400 device. The KP400 has multiple outlets that can be controled independently, which is why the outlet number must be specified.
+
 ```
 kasa -h|--help|help
 ```
+
 Show the tool's help.
 
 ## Debian Packaging
@@ -232,6 +262,7 @@ The provided Makefile supports building private Debian packages. These are _not_
   no source package.
 
 To build a Debian package, use the `debian-package` target:
+
 ```
 make debian-package
 ```
