@@ -7,7 +7,7 @@ Homepage: https://github.com/pascal-fb-martin/housekasa
 Standard-Version: 4.7.0
 Package: housekasa
 Architecture: {{arch}}
-Depends: 
+Depends: houseportal
 Description: A House service to collect and report OS metrics.
  HouseKasa is part of the House suite of web services.
  .
