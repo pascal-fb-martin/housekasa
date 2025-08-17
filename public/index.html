@@ -63,7 +63,7 @@ function kasaShowConfig (response) {
    var devices = response.kasa.devices;
    for (var i = 0; i < devices.length; i++) {
         var device = devices[i];
-        var outer = document.createElement("tr");
+        var outer = iolist.insertRow();
 
         var inner = document.createElement("td");
         var label = document.createElement("span");
@@ -122,8 +122,6 @@ function kasaShowConfig (response) {
             label.innerHTML = '';
         inner.appendChild(label);
         outer.appendChild(inner);
-
-        iolist.appendChild(outer);
     }
 }
 

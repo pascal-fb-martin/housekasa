@@ -54,9 +54,9 @@ function saveConfig () {
 
 function showNetwork (addr) {
 
-    var outer = document.createElement("tr");
-
     var netlist = document.getElementsByClassName ('netlist')[0];
+    var outer = netlist.insertRow();
+
     var prefix = 'kasanet_'+countNetShown;
     var inner = document.createElement("td");
     var entry = document.createElement("input");
@@ -66,7 +66,6 @@ function showNetwork (addr) {
     entry.placeholder = "IP Address (dot notation)";
     inner.appendChild(entry);
     outer.appendChild(inner);
-    netlist.appendChild(outer);
     countNetShown += 1;
 }
 
@@ -76,9 +75,9 @@ function addNetwork () {
 
 function showPlug (name, id, child, description) {
 
-    var outer = document.createElement("tr");
-
     var iolist = document.getElementsByClassName ('iolist')[0];
+    var outer = iolist.insertRow();
+
     var prefix = 'kasa_'+countIoShown+'_';
     var inner = document.createElement("td");
     var entry = document.createElement("input");
@@ -121,7 +120,6 @@ function showPlug (name, id, child, description) {
     inner.appendChild(entry);
     outer.appendChild(inner);
 
-    iolist.appendChild(outer);
     countIoShown += 1;
 }
 
