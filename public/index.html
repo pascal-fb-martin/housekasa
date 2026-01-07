@@ -3,7 +3,12 @@
 <head>
 <link rel=stylesheet type="text/css" href="/house.css" title="House">
 <script>
+
+var LatestStatus = 0;
+
 function kasaShowStatus (response) {
+
+    if (response.latest) LatestStatus = response.latest;
 
     document.getElementsByTagName('title')[0].innerHTML =
         response.host+' - Kasa Devices';
@@ -35,8 +40,11 @@ function kasaShowStatus (response) {
 }
 
 function kasaStatus () {
+    var url = "/kasa/status";
+    if (LatestStatus) url += "?known=" + LatestStatus;
+
     var command = new XMLHttpRequest();
-    command.open("GET", "/kasa/status");
+    command.open("GET", url);
     command.onreadystatechange = function () {
         if (command.readyState === 4 && command.status === 200) {
             kasaShowStatus (JSON.parse(command.responseText));

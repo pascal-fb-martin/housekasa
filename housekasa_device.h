@@ -21,7 +21,8 @@
  * housekasa_device.h - An implementation of the WiZ Connected protocol.
  *
  */
-const char *housekasa_device_initialize (int argc, const char **argv);
+const char *housekasa_device_initialize
+                (int argc, const char **argv, int livestate);
 const char *housekasa_device_refresh (void);
 
 int housekasa_device_changed (void);

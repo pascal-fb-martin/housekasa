@@ -22,7 +22,8 @@
  *
  * SYNOPSYS:
  *
- * const char *housekasa_device_initialize (int argc, const char **argv);
+ * const char *housekasa_device_initialize
+ *                 (int argc, const char **argv, int livestate);
  *
  *    Initialize this module at startup.
  *
@@ -97,6 +98,7 @@
 #include "echttp_json.h"
 #include "houselog.h"
 #include "houseconfig.h"
+#include "housestate.h"
 
 #include "housekasa_device.h"
 
@@ -142,14 +144,17 @@ struct NetworkMap {
 static int KasaSenseCount = 0;
 static struct NetworkMap KasaSense[KASASENSEMAX];
 
+static int LiveState = 0;
 
 int housekasa_device_count (void) {
     return DevicesCount;
 }
 
 int housekasa_device_changed (void) {
+
     if (DeviceListChanged) {
         DeviceListChanged = 0;
+        housestate_changed (LiveState);
         return 1;
     }
     return 0;
@@ -345,6 +350,9 @@ void housekasa_device_set (int device, int state,
 }
 
 static void housekasa_device_reset (int i, int status) {
+
+    if (Devices[i].status != status) housestate_changed (LiveState);
+
     Devices[i].commanded = Devices[i].status = status;
     Devices[i].pending = Devices[i].deadline = 0;
     Devices[i].priority = 0;
@@ -431,6 +439,7 @@ static int housekasa_device_add (const char *model,
     }
     houselog_trace (HOUSE_FAILURE,
                     "DEVICE", "no space for device %s", id);
+    return -1;
 }
 
 static int housekasa_device_gethost (const char *name, struct sockaddr_in *a) {
@@ -610,6 +619,7 @@ static void housekasa_device_status_update (int device, int status) {
                 Devices[device].priority = 0; // Low priority when off.
         }
         Devices[device].status = status;
+        housestate_changed (LiveState);
     }
     Devices[device].detected = time(0);
 }
@@ -688,7 +698,7 @@ static void housekasa_device_getinfo (ParserToken *json, int count,
             device = housekasa_device_id_search (parent, id);
             if (device < 0 && DevicesCount < DevicesSpace) {
                 device = housekasa_device_add (model, parent, id);
-                if (device < 0) return;
+                if (device < 0) continue;
                 housekasa_device_refresh_string
                     (&(Devices[device].name),
                      housekasa_device_json_string (json, child, ".alias"));
@@ -811,7 +821,11 @@ static void housekasa_device_receive (int fd, int mode) {
     }
 }
 
-const char *housekasa_device_initialize (int argc, const char **argv) {
+const char *housekasa_device_initialize
+                (int argc, const char **argv, int livestate) {
+
+    LiveState = livestate;
+
     housekasa_device_socket ();
     echttp_listen (KasaSocket, 1, housekasa_device_receive, 0);
     return housekasa_device_refresh ();
