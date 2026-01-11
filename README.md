@@ -4,7 +4,7 @@ A House web service to control TP-Link Kasa devices (lights, plugs..)
 
 ## Overview
 
-This is a web server to give access to TP-Link Kasa WiFi devices. This server can sense the current status and control the state of each device. The web API is meant to be compatible with the House control API (e.g. the same web API as [houserelays](https://github.com/pascal-fb-martin/houserelays)).
+This is a web server to give access to TP-Link Kasa WiFi devices. This server can sense the current status and control the state of each device. The web API is meant to be compatible with the [House control API](https://github.com/pascal-fb-martin/houseportal/blob/master/controlapi.md).
 
 See the [gallery](https://github.com/pascal-fb-martin/housekasa/blob/main/gallery/README.md) for a view of HouseKasa's web UI.
 

@@ -84,7 +84,8 @@ static const char *housekasa_status (const char *method, const char *uri,
 
         int point = echttp_json_add_object (context, container, name);
         echttp_json_add_string (context, point, "state", status);
-        echttp_json_add_string (context, point, "command", commanded);
+        if (strcmp (status, commanded))
+            echttp_json_add_string (context, point, "command", commanded);
         if (pulsed)
             echttp_json_add_integer (context, point, "pulse", (int)pulsed);
         if (priority)
