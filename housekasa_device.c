@@ -494,8 +494,10 @@ const char *housekasa_device_refresh (void) {
     }
     if (!Devices) return "no more memory";
 
+    int *list = calloc (requested, sizeof(int));
+    requested = houseconfig_enumerate (devices, list, requested);
     for (i = 0; i < requested; ++i) {
-        int device = houseconfig_array_object (devices, i);
+        int device = list[i];
         if (device <= 0) continue;
         const char *model = houseconfig_string (device, ".model");
         const char *id = houseconfig_string (device, ".id");
@@ -515,6 +517,7 @@ const char *housekasa_device_refresh (void) {
         if (echttp_isdebug()) fprintf (stderr, "load device %s, ID %s%s\n", Devices[idx].name, Devices[idx].id, Devices[i].child);
         housekasa_device_reset (idx, Devices[idx].status);
     }
+    free (list);
 
     devices = houseconfig_array (0, ".kasa.net");
     if (devices < 0) return 0; // Let's make this array optional.
@@ -529,11 +532,11 @@ const char *housekasa_device_refresh (void) {
     }
     KasaSenseCount = 1;
 
+    list = calloc (requested, sizeof(int));
+    requested = houseconfig_enumerate (devices, list, requested);
     for (i = 0; i < requested; ++i) {
         KasaSense[KasaSenseCount] = KasaSense[0];
-        char index[10];
-        snprintf (index, sizeof(index), "[%d]", i);
-        const char *addr = houseconfig_string(devices, index);
+        const char *addr = houseconfig_string(list[i], "");
         if ((!addr) || (addr[0] == 0)) continue;
         if (echttp_isdebug())
             fprintf (stderr, "load broadcast IP address %s\n", addr);
@@ -548,6 +551,8 @@ const char *housekasa_device_refresh (void) {
             if (KasaSenseCount >= KASASENSEMAX) break;
         }
     }
+    free (list);
+
     return 0;
 }
 
