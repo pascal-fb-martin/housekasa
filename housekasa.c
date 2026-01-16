@@ -160,19 +160,19 @@ static const char *housekasa_config (const char *method, const char *uri,
         housekasa_device_live_config (buffer, sizeof(buffer));
         echttp_content_type_json ();
         return buffer;
-    } else if (strcmp ("POST", method) == 0) {
-        const char *error = houseconfig_update(data);
+    }
+
+    if (strcmp ("POST", method) == 0) {
+        const char *error = houseconfig_update(data, "USER CHANGE");
         if (error) {
             echttp_error (400, error);
         } else {
             housestate_changed (LiveState);
-            housekasa_device_refresh();
-            houselog_event ("SYSTEM", "CONFIG", "SAVE", "TO DEPOT %s", houseconfig_name());
-            housedepositor_put ("config", houseconfig_name(), data, length);
         }
-    } else {
-        echttp_error (400, "invalid method");
+        return "";
     }
+
+    echttp_error (400, "invalid method");
     return "";
 }
 
@@ -182,23 +182,15 @@ static void housekasa_background (int fd, int mode) {
 
     houseportal_background (now);
     housekasa_device_periodic(now);
-    if (housekasa_device_changed()) {
+    if (housekasa_device_changed() && houseconfig_active()) {
         static char buffer[65537];
         housekasa_device_live_config (buffer, sizeof(buffer));
-        houseconfig_update(buffer);
-        houselog_event ("SYSTEM", "CONFIG", "SAVE", "TO DEPOT %s (AUTODETECT)", houseconfig_name());
-        housedepositor_put ("config", houseconfig_name(), buffer, strlen(buffer));
-        if (echttp_isdebug()) fprintf (stderr, "Configuration saved\n");
+        houseconfig_save (buffer, "AUTODETECT");
     }
     housediscover (now);
     houselog_background (now);
+    houseconfig_background (now);
     housedepositor_periodic (now);
-}
-
-static void housekasa_config_listener (const char *name, time_t timestamp,
-                                       const char *data, int length) {
-    houselog_event ("SYSTEM", "CONFIG", "LOAD", "FROM DEPOT %s", name);
-    if (!houseconfig_update (data)) housekasa_device_refresh();
 }
 
 static void housekasa_protect (const char *method, const char *uri) {
@@ -230,8 +222,7 @@ int main (int argc, const char **argv) {
     houselog_initialize ("kasa", argc, argv);
     housedepositor_initialize (argc, argv);
 
-    houseconfig_default ("--config=kasa");
-    error = houseconfig_load (argc, argv);
+    error = houseconfig_initialize ("kasa", housekasa_device_refresh, argc, argv);
     if (error) {
         houselog_trace
             (HOUSE_FAILURE, "CONFIG", "Cannot load configuration: %s\n", error);
@@ -245,7 +236,6 @@ int main (int argc, const char **argv) {
             (HOUSE_FAILURE, "PLUG", "Cannot initialize: %s\n", error);
         exit(1);
     }
-    housedepositor_subscribe ("config", houseconfig_name(), housekasa_config_listener);
 
     echttp_cors_allow_method("GET");
     echttp_protect (0, housekasa_protect);
