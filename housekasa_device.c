@@ -497,7 +497,7 @@ const char *housekasa_device_refresh (void) {
     int *list = calloc (requested, sizeof(int));
     requested = houseconfig_enumerate (devices, list, requested);
     for (i = 0; i < requested; ++i) {
-        int device = list[i];
+        int device = houseconfig_object (list[i], 0);
         if (device <= 0) continue;
         const char *model = houseconfig_string (device, ".model");
         const char *id = houseconfig_string (device, ".id");
