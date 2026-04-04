@@ -806,7 +806,7 @@ static void housekasa_device_receive (int fd, int mode) {
         // destructive).
         //
         char buffer[1500];
-        strncpy (buffer, data, sizeof(buffer));
+        memccpy (buffer, data, 0, sizeof(buffer));
 
         const char *error = echttp_json_parse (buffer, json, &jsoncount);
         if (error) {
