@@ -96,6 +96,8 @@
 
 #include "echttp.h"
 #include "echttp_json.h"
+#include "echttp_libc.h"
+
 #include "houselog.h"
 #include "houseconfig.h"
 #include "housestate.h"
@@ -806,7 +808,7 @@ static void housekasa_device_receive (int fd, int mode) {
         // destructive).
         //
         char buffer[1500];
-        memccpy (buffer, data, 0, sizeof(buffer));
+        strtcpy (buffer, data, sizeof(buffer));
 
         const char *error = echttp_json_parse (buffer, json, &jsoncount);
         if (error) {
