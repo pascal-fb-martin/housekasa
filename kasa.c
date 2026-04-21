@@ -93,7 +93,7 @@ static void kasa_send (const char *data) {
     char key = 0xab;
     int length = strlen(data);
     if (length > sizeof(encoded)) {
-        printf ("Data too large to encode: %d is greater than %d\n",
+        printf ("Data too large to encode: %d is greater than %zu\n",
                 length, sizeof(encoded));
         exit(1);
     }
