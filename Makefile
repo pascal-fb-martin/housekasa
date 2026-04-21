@@ -50,7 +50,7 @@ housekasa: $(OBJS)
 	gcc -Os -o housekasa $(OBJS) -lhouseportal -lechttp -lssl -lcrypto -lmagic -lrt
 
 kasa: kasa.c
-	gcc -Os -o kasa kasa.c
+	gcc -Wall -Os -o kasa kasa.c
 
 # Distribution agnostic file installation -----------------------
 

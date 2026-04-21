@@ -86,23 +86,6 @@ static void kasa_socket (void) {
     printf ("UDP socket is ready.\n");
 }
 
-static unsigned char hex2bin(char data) {
-    if (data >= '0' && data <= '9')
-        return data - '0';
-    if (data >= 'a' && data <= 'f')
-        return data - 'a' + 10;
-    if (data >= 'A' && data <= 'F')
-        return data - 'A' + 10;
-    return 0;
-}
-
-static char bin2hex (unsigned char d) {
-    d &= 0x0f;
-    if (d >= 0 && d <= 9) return '0' + d;
-    if (d >= 10 && d <= 15) return ('a' - 10) + d;
-    return '0';
-}
-
 static void kasa_send (const char *data) {
 
     char encoded[1024];
@@ -146,9 +129,8 @@ static void kasa_receive (void) {
 
     char encoded[1024];
     char data[1025];
-    char source[100];
     struct sockaddr_in addr;
-    int addrlen = sizeof(addr);
+    socklen_t addrlen = sizeof(addr);
 
     int size = recvfrom (KasaSocket, encoded, sizeof(encoded), 0,
                          (struct sockaddr *)(&addr), &addrlen);
@@ -240,7 +222,6 @@ int main (int argc, char **argv) {
         kasa_send ("{\"system\":{\"get_sysinfo\":{}}}");
     } else if (!strcmp (cmd, "alias")) {
         if (model) {
-            char buffer[200];
             snprintf (buffer, sizeof(buffer),
                       "{\"system\":{\"set_dev_alias\":{\"alias\":\"%s\"}}}",
                       model);
@@ -254,7 +235,6 @@ int main (int argc, char **argv) {
                 printf ("Outlet ID is required\n");
                 exit (1);
             }
-            char buffer[200];
             snprintf (buffer, sizeof(buffer),
                       "{\"context\":{\"child_ids\":[\"%s\"]},\"system\":{\"set_relay_state\":{\"state\":1}}}", id);
             kasa_send (buffer);
@@ -269,7 +249,6 @@ int main (int argc, char **argv) {
                 printf ("Outlet ID is required\n");
                 exit (1);
             }
-            char buffer[200];
             snprintf (buffer, sizeof(buffer),
                       "{\"context\":{\"child_ids\":[\"%s\"]},\"system\":{\"set_relay_state\":{\"state\":0}}}", id);
             kasa_send (buffer);
