@@ -206,15 +206,6 @@ static int housekasa_device_id_search (const char *id, const char *child) {
     return -1;
 }
 
-static int housekasa_device_address_search (struct sockaddr_in *addr) {
-    int i;
-    for (i = 0; i < DevicesCount; ++i) {
-        if (addr->sin_addr.s_addr == Devices[i].ipaddress.sin_addr.s_addr)
-            return i;
-    }
-    return -1;
-}
-
 static void housekasa_device_socket (void) {
 
     KasaSense[0].name = 0;
@@ -244,7 +235,7 @@ static void housekasa_device_send (const struct sockaddr_in *a, const char *d) {
     if (echttp_isdebug()) {
         long ip = ntohl((long)(a->sin_addr.s_addr));
         int port = ntohs(a->sin_port);
-        printf ("Sending packet to %d.%d.%d.%d(port %d): %s\n",
+        printf ("Sending packet to %ld.%ld.%ld.%ld(port %d): %s\n",
                 (ip>>24)&0xff, (ip>>16)&0xff, (ip>>8)&0xff, ip&0xff, port, d);
     }
     int i;
@@ -324,8 +315,8 @@ void housekasa_device_set (int device, int state,
         comment[0] = 0;
 
     if (echttp_isdebug()) {
-        if (pulse) fprintf (stderr, "set %s to %s at %ld (pulse %ds)%s\n", Devices[device].name, namedstate, now, pulse, comment);
-        else       fprintf (stderr, "set %s to %s at %ld%s\n", Devices[device].name, namedstate, now, comment);
+        if (pulse) fprintf (stderr, "set %s to %s at %lld (pulse %ds)%s\n", Devices[device].name, namedstate, (long long)now, pulse, comment);
+        else       fprintf (stderr, "set %s to %s at %lld%s\n", Devices[device].name, namedstate, (long long)now, comment);
     }
 
     if (pulse > 0) {
@@ -467,7 +458,6 @@ const char *housekasa_device_refresh (void) {
     int i;
     int devices;
     int requested;
-    int oldconfig = DevicesCount;
 
     for (i = 0; i < DevicesCount; ++i) {
         Devices[i].detected = 0;
@@ -763,7 +753,6 @@ static void housekasa_device_response (ParserToken *json, int count,
     if (result >= 0) {
         if (json[result].value.integer) return; // Error.
 
-        int device = housekasa_device_address_search (addr);
         int i;
         for (i = 0; i < DevicesCount; ++i) {
             if (addr->sin_addr.s_addr != Devices[i].ipaddress.sin_addr.s_addr)
@@ -786,7 +775,7 @@ static void housekasa_device_receive (int fd, int mode) {
 
     char data[1500];
     struct sockaddr_in addr;
-    int addrlen = sizeof(addr);
+    socklen_t addrlen = sizeof(addr);
 
     int size = recvfrom (KasaSocket, data, sizeof(data)-1, 0,
                          (struct sockaddr *)(&addr), &addrlen);
