@@ -179,7 +179,7 @@ window.onload = function() {
    <title>Kasa Devices</title>
 </head>
 <body>
-   <header>
+   <nav>
    <table>
    <tr>
    <td><a href="/kasa/index.html">Devices</a></td>
@@ -187,7 +187,9 @@ window.onload = function() {
    <td><span>Config</span></td>
    </tr>
    </table>
-   </header>
+   </nav>
+   <main>
+   <article>
    <section>
    <h1>Devices</h1>
    <form name="iolistform">
@@ -200,6 +202,8 @@ window.onload = function() {
       </tr>
    </table>
    </form>
+   </section>
+   <section>
    <h1>Known Network Addresses</h1>
    <form name="netlistform">
    <table class="housewidetable netlist">
@@ -214,6 +218,8 @@ window.onload = function() {
       <button class="actionbutton" onclick="saveConfig()">Save</button>
    </div>
    </section>
+   </article>
+   </main>
 </body>
 </html>
 
